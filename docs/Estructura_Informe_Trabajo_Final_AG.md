@@ -1,147 +1,184 @@
-# Estructura Limpia del Informe Final: Algoritmos Genéticos (AG)
-## Asignatura: Inteligencia Artificial (Corte 3) — Universidad de Cartagena
-
-> **Guía directa para estructurar el documento en Word (.docx)**  
-> Sin saturación de viñetas, con prosa fluida y la misma jerarquía académica utilizada en los informes de Corte 1 y Corte 2.
+﻿# CUARTO TALLER: ALGORITMOS GENÉTICOS (AG)
+### Optimización Heurística de Problemas de Ingeniería mediante Algoritmo Genético Simple (SGA) con Manejo de Restricciones y Funciones de Penalización
 
 ---
 
-# PORTADA
-* **Título:** CUARTO TALLER: ALGORITMOS GENÉTICOS (AG)
-* **Subtítulo:** Optimización Heurística y Solución de Problemas Complejos de Ingeniería Mediante Algoritmo Genético Simple (SGA) con Manejo de Restricciones y Funciones de Penalización
-* **Institución:** Universidad de Cartagena — Facultad de Ingeniería — Programa de Ingeniería de Sistemas
-* **Asignatura:** Inteligencia Artificial (Tercer Corte)
-* **Docente:** Ing. Manuel Alejandro Ospina Alarcón
-* **Autores:** Dago David Palmera Navarro (Cód. 0222321003) & Julián David Camargo Padilla (Cód. 0222320016)
-* **Lugar y Fecha:** Cartagena de Indias, D. T. y C., Noviembre de 2026
-
----
-
-# ÍNDICE GENERAL / TABLA DE CONTENIDO
-*(Generado automáticamente desde Word en Referencias $\rightarrow$ Tabla de contenido)*
+**Inteligencia Artificial — Tercer Corte**
+**Docente:** Ing. Manuel Alejandro Ospina Alarcón
+**Autores:** Dago David Palmera Navarro (Cód. 0222321003) & Julián David Camargo Padilla (Cód. 0222320016)
+**Universidad de Cartagena — Facultad de Ingeniería — Ingeniería de Sistemas**
+**Cartagena de Indias, Noviembre de 2026**
 
 ---
 
 # 1. INTRODUCCIÓN
 
-*(Sección en prosa continua y fluida de 3 a 4 párrafos completos, sin viñetas ni subdivisiones 1.1 o 1.2)*
-
-* **Párrafo 1 (Fundamento del paradigma):** Apertura sobre el Soft Computing y el origen de la Computación Evolutiva. Contraste entre la rigidez de los métodos analíticos exactos y la necesidad de heurísticas bioinspiradas para explorar espacios de búsqueda no lineales, multimodales y NP-difíciles donde la búsqueda exhaustiva resulta inviable.
-* **Párrafo 2 (El Algoritmo Genético Simple):** Fundamentos del marco de John Henry Holland (1975) y el principio darwiniano de supervivencia del más apto. Explicación de cómo la población evoluciona mediante operadores de selección, cruce, mutación y elitismo, adaptándose de forma estocástica pero guiada hacia regiones óptimas.
-* **Párrafo 3 (Aplicación al problema del trabajo y restricciones):** Presentación del caso de estudio de ingeniería abordado en este informe (del banco de la prueba oficial). Planteamiento de la necesidad de manejar restricciones del mundo real mediante funciones de penalización para dirigir la búsqueda hacia el espacio de soluciones factibles.
-* **Párrafo 4 (Propósito y estructura del informe):** Declaración explícita del alcance del trabajo, los parámetros canónicos evaluados ($N=1000$, Elitismo=2, $p=2$, $P_c=90\%$, $P_m=2\%$, Parada $< 10^{-2}$) y síntesis del contenido presentado a lo largo de los capítulos.
-
----
-
 # 2. OBJETIVOS
 
 ## 2.1. Objetivo General
-Diseñar, implementar y evaluar computacionalmente un Algoritmo Genético Simple (SGA) robusto y modular con manejo de restricciones y funciones de penalización, con el propósito de optimizar un problema de ingeniería de alta dimensionalidad y analizar la dinámica de convergencia poblacional.
 
 ## 2.2. Objetivos Específicos
-1. Analizar los fundamentos matemáticos y bioinspirados del Algoritmo Genético Simple, formalizando el mapeo de genotipo a fenotipo y la formulación analítica de la función de aptitud (*fitness*).
-2. Modelar e integrar formalmente las restricciones operativas del problema (fuertes y débiles) mediante funciones de penalización para garantizar la factibilidad de la solución óptima.
-3. Implementar de forma modular los operadores genéticos canónicos: selección por torneo determinístico ($p=2$), elitismo estricto (2 individuos), cruce en un punto (SPX con $P_c=0.90$) y mutación puntual ($P_m=0.02$).
-4. Monitorear y registrar la evolución de la población, documentando cuantitativamente la población inicial aleatoria ($t=0$) y la población final convergida ($t=t_{\text{fin}}$).
-5. Evaluar el desempeño del algoritmo a través de curvas de convergencia generacional (mejor, promedio y peor fitness), auditando los errores residuales y formulando conclusiones técnicas basadas en la experimentación.
-
----
 
 # 3. FUNDAMENTACIÓN TEÓRICA
 
-## 3.1. Analogía Biológico-Computacional y Terminología
-Mapeo entre las estructuras biológicas de la genética natural (individuo, cromosoma, gen, alelo, población y aptitud) y sus equivalentes en optimización matemática (solución candidata, vector de variables, variable, valor del parámetro, conjunto de soluciones y función objetivo).
+## 3.1. Analogía Biológico-Computacional y Terminología en Algoritmos Genéticos
 
 ## 3.2. Estructura y Flujo del Algoritmo Genético Simple (SGA)
-Ciclo evolutivo canónico, Teorema del Esquema de Holland e Hipótesis de los Bloques Constructores.
 
-## 3.3. Operadores Genéticos y Dinámica Poblacional
-* **Selección por Torneo y Elitismo:** Mecanismo de torneo binario determinístico ($p=2$), presión selectiva y demostración de cómo el elitismo garantiza la no degeneración del mejor fitness.
-* **Cruce (Crossover) y Copia Asexual:** Recombinación en un punto (SPX) con $P_c=90\%$, locus estocástico de corte y justificación de estrategias reproductivas destructivas vs. no destructivas.
-* **Mutación Puntual:** Perturbación estocástica de genes con $P_m=2\%$, función como seguro contra el estancamiento prematuro y preservación de la diversidad alélica.
+## 3.3. Operadores Genéticos
 
-## 3.4. Manejo de Restricciones en Optimización Bioinspirada
-Definición de restricciones fuertes (*hard constraints*) y débiles (*soft constraints*). Análisis comparativo de los métodos de tratamiento: funciones de penalización (estáticas, dinámicas y adaptativas), métodos de región factible y métodos de reparación heurística.
+### 3.3.1. Selección por Torneo y Elitismo
 
----
+### 3.3.2. Cruce en un Punto (SPX)
 
-# 4. DEFINICIÓN DEL PROBLEMA Y CASO DE ESTUDIO
+### 3.3.3. Mutación Puntual
 
-## 4.1. Parámetros Generales Asignados por la Cátedra
-Contextualización de las directrices oficiales: tamaño de población ($1000$ individuos), elitismo ($2$ individuos), torneo ($p=2$), cruce SPX ($90\%$), mutación puntual ($2\%$) y criterio de parada (fitness $< 10^{-2}$ o límite generacional).
-
-## 4.2. Formulación del Problema Seleccionado
-*(Se desarrolla el problema elegido de la prueba oficial)*
-* **Contexto físico y variables de decisión:** Descripción de las variables continuas o discretas que definen el sistema.
-* **Función Objetivo:** Expresión matemática que se persigue minimizar o maximizar.
-* **Restricciones del Problema:** Catálogo formal de cotas, límites operativos y condiciones de viabilidad.
+## 3.4. Manejo de Restricciones y Funciones de Penalización
 
 ---
 
-# 5. MODELADO MATEMÁTICO, CODIFICACIÓN Y DISEÑO DEL FITNESS
+# PROBLEMA 1: OPTIMIZACIÓN DE RUTAS DE ENTREGA (VRP)
 
-## 5.1. Codificación del Cromosoma (Genotipo $\rightarrow$ Fenotipo)
-Definición del vector cromosómico, rango de definición de los alelos y función de decodificación hacia el espacio físico de soluciones.
+# 4. DEFINICIÓN DEL PROBLEMA 1
 
-## 5.2. Función de Aptitud Base y Función de Penalización
-* Expresión analítica del fitness base ($f_{\text{base}}$).
-* Formulación de las penalizaciones aditivas por violación de restricciones:
-  $$\text{Fitness}(\vec{x}) = f_{\text{base}}(\vec{x}) + \sum_{k=1}^m \lambda_k \cdot R_k(\vec{x})$$
-* Calibración y justificación técnica de los coeficientes de penalización $\lambda_k$.
+## 4.1. Descripción y Contexto de Ingeniería
 
----
+## 4.2. Función Objetivo
 
-# 6. IMPLEMENTACIÓN COMPUTACIONAL Y RESULTADOS EXPERIMENTALES
+## 4.3. Restricciones del Sistema
+
+## 4.4. Parámetros de Configuración
+
+# 5. MODELADO MATEMÁTICO Y DISEÑO DEL FITNESS — PROBLEMA 1
+
+## 5.1. Codificación del Cromosoma: Genotipo y Fenotipo
+
+## 5.2. Función de Aptitud Base
+
+## 5.3. Función de Penalización Integral
+
+# 6. IMPLEMENTACIÓN COMPUTACIONAL — PROBLEMA 1
 
 ## 6.1. Arquitectura del Código y Modularidad
-Descripción de las funciones implementadas (`Fitness`, `Elitismo`, `seleccion_torneo_2`, `Cruce`, `Mutacion` y script driver principal).
 
-## 6.2. Registro y Análisis de la Población Inicial ($t = 0$)
-Muestra representativa de la población inicial aleatoria, tabla de métricas (mejor fitness, promedio, peor fitness y desviación estándar) y análisis de diversidad genética inicial.
+## 6.2. Tabla de Hiperparámetros
 
-## 6.3. Registro y Análisis de la Población Final ($t = t_{\text{convergencia}}$)
-Condición de parada alcanzada, tabla de los mejores individuos de la generación final, valores decodificados del **Mejor Individuo Absoluto** ($\vec{x}^*$) y comprobación matemática del 100% de cumplimiento de restricciones.
+# 7. RESULTADOS EXPERIMENTALES — PROBLEMA 1
 
-## 6.4. Comparativa Cuantitativa: Población Inicial vs. Población Final
-Tabla resumen comparativa de la evolución poblacional (ganancia de aptitud, reducción de dispersión y refinamiento de parámetros).
+## 7.1. Población Inicial
 
----
+## 7.2. Población Final y Mejor Individuo
 
-# 7. ANÁLISIS DE CONVERGENCIA, ERRORES Y GRÁFICAS
+## 7.3. Comparativa: Población Inicial vs. Población Final
 
-## 7.1. Curvas de Convergencia Generacional
-Análisis de la gráfica de evolución por épocas: curva del mejor fitness (élite), curva del promedio poblacional y curva del peor fitness. Identificación de las fases de exploración rápida y explotación asintótica.
+# 8. ANÁLISIS DE CONVERGENCIA Y ERRORES — PROBLEMA 1
 
-## 7.2. Auditoría del Error Residual y Estabilidad
-Comportamiento numérico del error a lo largo de las generaciones, tasa de mejora y ausencia de oscilaciones divergentes.
+## 8.1. Curvas de Convergencia Generacional
 
-## 7.3. Análisis del Comportamiento de los Operadores y Penalizaciones
-Evaluación del impacto del elitismo en la estabilidad y efectividad de los términos de penalización para expulsar soluciones infactibles hacia la región válida.
+## 8.2. Auditoría del Error Residual
+
+## 8.3. Análisis de los Operadores y las Penalizaciones
 
 ---
 
-# 8. CONCLUSIONES
+# PROBLEMA 2: OPTIMIZACIÓN DE DISEÑO DE CIRCUITOS PCB
 
-*(Redactadas en párrafos sólidos y numerados, destacando el concepto clave en negrita al inicio de cada conclusión)*
+# 9. DEFINICIÓN DEL PROBLEMA 2
 
-1. **Efectividad del Algoritmo Genético Simple en Espacios Complejos:** [Párrafo explicativo analizando la convergencia lograda frente a la dimensionalidad del problema].
-2. **Impacto Decisivo de las Funciones de Penalización:** [Párrafo sobre cómo las penalizaciones mantuvieron la solución dentro del espacio factible sin comprometer la exploración].
-3. **Rol del Elitismo en la Monotonía de la Convergencia:** [Párrafo justificando que la copia de los 2 mejores individuos garantizó que no hubiese pérdida de aptitud acumulada].
-4. **Equilibrio entre Presión Selectiva y Diversidad Genética:** [Párrafo evaluando el comportamiento conjunto del torneo $p=2$, cruce al $90\%$ y mutación al $2\%$].
-5. **Comprobación de Cumplimiento y Proyección Técnica:** [Párrafo final sobre la calidad del óptimo alcanzado y recomendaciones de escalabilidad].
+## 9.1. Descripción y Contexto de Ingeniería
+
+## 9.2. Función Objetivo
+
+## 9.3. Restricciones del Sistema
+
+## 9.4. Parámetros de Configuración
+
+# 10. MODELADO MATEMÁTICO Y DISEÑO DEL FITNESS — PROBLEMA 2
+
+## 10.1. Codificación del Cromosoma: Genotipo y Fenotipo
+
+## 10.2. Función de Aptitud Base
+
+## 10.3. Función de Penalización Integral
+
+# 11. IMPLEMENTACIÓN COMPUTACIONAL — PROBLEMA 2
+
+## 11.1. Arquitectura del Código y Modularidad
+
+## 11.2. Tabla de Hiperparámetros
+
+# 12. RESULTADOS EXPERIMENTALES — PROBLEMA 2
+
+## 12.1. Población Inicial
+
+## 12.2. Población Final y Mejor Individuo
+
+## 12.3. Comparativa: Población Inicial vs. Población Final
+
+# 13. ANÁLISIS DE CONVERGENCIA Y ERRORES — PROBLEMA 2
+
+## 13.1. Curvas de Convergencia Generacional
+
+## 13.2. Auditoría del Error Residual
+
+## 13.3. Análisis de los Operadores y las Penalizaciones
 
 ---
 
-# 9. REFERENCIAS BIBLIOGRÁFICAS
-*(Formato IEEE o APA 7.ª edición, 5 a 8 referencias académicas formales)*
-* Holland, J. H. (1975). *Adaptation in Natural and Artificial Systems*. University of Michigan Press.
-* Goldberg, D. E. (1989). *Genetic Algorithms in Search, Optimization, and Machine Learning*. Addison-Wesley.
-* Michalewicz, Z. (1996). *Genetic Algorithms + Data Structures = Evolution Programs*. Springer-Verlag.
-* Eiben, A. E., & Smith, J. E. (2015). *Introduction to Evolutionary Computing*. Springer.
-* Ospina Alarcón, M. A. (2026). *Material de clase y diapositivas de Inteligencia Artificial*. Universidad de Cartagena.
+# PROBLEMA 3: OPTIMIZACIÓN DE CARTERA DE INVERSIONES (MARKOWITZ)
+
+# 14. DEFINICIÓN DEL PROBLEMA 3
+
+## 14.1. Descripción y Contexto de Ingeniería
+
+## 14.2. Función Objetivo
+
+## 14.3. Restricciones del Sistema
+
+## 14.4. Parámetros de Configuración
+
+# 15. MODELADO MATEMÁTICO Y DISEÑO DEL FITNESS — PROBLEMA 3
+
+## 15.1. Codificación del Cromosoma: Genotipo y Fenotipo
+
+## 15.2. Función de Aptitud Base
+
+## 15.3. Función de Penalización Integral
+
+# 16. IMPLEMENTACIÓN COMPUTACIONAL — PROBLEMA 3
+
+## 16.1. Arquitectura del Código y Modularidad
+
+## 16.2. Tabla de Hiperparámetros
+
+# 17. RESULTADOS EXPERIMENTALES — PROBLEMA 3
+
+## 17.1. Población Inicial
+
+## 17.2. Población Final y Mejor Individuo
+
+## 17.3. Comparativa: Población Inicial vs. Población Final
+
+# 18. ANÁLISIS DE CONVERGENCIA Y ERRORES — PROBLEMA 3
+
+## 18.1. Curvas de Convergencia Generacional
+
+## 18.2. Auditoría del Error Residual
+
+## 18.3. Análisis de los Operadores y las Penalizaciones
 
 ---
 
-# 10. ANEXOS
-* **Anexo A.** Código Fuente Completo y Comentado del Algoritmo Genético.
-* **Anexo B.** Tabla Numérica Extendida de Convergencia por Generaciones.
+# 19. CONCLUSIONES
+
+# 20. REFERENCIAS BIBLIOGRÁFICAS
+
+# 21. ANEXOS
+
+## Anexo A. Código Fuente Completo — Problema 1 (VRP)
+
+## Anexo B. Código Fuente Completo — Problema 2 (PCB)
+
+## Anexo C. Código Fuente Completo — Problema 3 (Markowitz)
+
+## Anexo D. Tablas de Convergencia por Generaciones
