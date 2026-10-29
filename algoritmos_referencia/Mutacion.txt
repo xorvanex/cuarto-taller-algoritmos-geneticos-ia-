@@ -1,0 +1,54 @@
+% Mutación de los hijos en un gen y con alelo aleatorio.
+
+function [mutado1,mutado2]=Mutacion(Cruzado1,Cruzado2)
+
+Pm=0.025; % Probabilidad de mutación. Si el NPA es menor hay mutación, de lo 
+%contrario no.
+
+% Número para ver si existe mutación o no.
+a=0; % Limite inferior para mutación aleaatorio.
+b=1; % Limite superior para mutación aleaatorio.
+mut=(b-a)*rand(1,1)+a; % Formula para generar números aleatorios.
+
+% Número para seleccionar en qué gen se realizara la mutación.
+a=1; % Limite inferior para número aleatorio para gen a mutar,
+ %gen=n seleción del gen n para mutación.
+b=length(Cruzado1); % limite superior para número aleatorio para gen a mutar.
+r=(b-a)*rand(1,1)+a; % Formula para generar números aleatorios.
+genmut=round(r); % gen aleatorio a mutar.
+
+% Número para cambi de alelo en el gen a mutar.
+a=0.5; % Limite inferior para alelo a mutar,
+b=5; % limite superior para alelo a mutar.
+r=(b-a)*rand(1,1)+a; % Formula para generar números aleatorios.
+alelomut=roundn(r,-2); % valor del gen aleatorio a mutar.
+
+% Número para seleccionar individuo a mutar.
+a=1; % Limite inferior para individuo a mutar.
+b=2; % limite superior para individuo a mutar.
+r=(b-a)*rand(1,1)+a; % Formula para generar números aleatorios.
+selec=round(r); % Individo aleatorio a mutar.
+
+if mut<=Pm
+    %Hay Mutación
+    if selec==1
+       % Se seleccionó el individo 1 para ser mutado
+       Cruzado1(genmut)=alelomut;
+       mutado1=Cruzado1;
+       mutado2=Cruzado2;
+    else
+        % Se seleccionó el individo 2 para ser mutado
+       Cruzado2(genmut)=alelomut;
+       mutado1=Cruzado1;
+       mutado2=Cruzado2;
+    end
+else %Si la probabilidad de mutación no se cumple, se aplica el operador de copia. 
+    %Los individuos cruzados pasan directamente a ser parte de la población
+    %temporal.
+    mutado1=Cruzado1;
+    mutado2=Cruzado2;
+end
+end
+
+
+

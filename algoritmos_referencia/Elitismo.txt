@@ -1,0 +1,21 @@
+% Función que me entrega los dos mejorres individuos para la siguiente
+% generación
+function [Pob_tem,Pob_orden,xi]=Elitismo(pobla,fitness)
+Pob_tem=[];
+Pob_orden=[]; % Creo un vector vacio para empezar a organizar los individuos 
+%de mejor fitness a peor fitness.
+[xi,yi]=sort(fitness);  % ordena el fitness en xi e indica en yi la posición
+%del fitnes del individuo.
+for i=1:length(pobla)
+    Pob_orden=[Pob_orden;pobla(yi(i),:)]; % Se organiza la población de 
+    %individuos del mejor fitness al peor fitness.
+    
+    if i<=2
+        Pob_tem=[Pob_tem;Pob_orden(i,:)]; % Por elitismo pasan los primeros individuos 
+        % a la siguiente generación.
+    end
+    Pob_orden; % Visualización de la población ordenada
+end
+end
+        
+    

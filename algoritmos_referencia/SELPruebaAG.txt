@@ -1,0 +1,87 @@
+% Ejemplo completo del algoritmo genético
+%19 de Mayo
+
+clc
+close all
+clear all
+
+global SE;
+
+SE=[3 8 2 25;1 -2 4 12;-5 3 11 4];
+
+% Parámetros de configuración:
+% -Tamaño de población: 1000 individuos (10)%
+%-Elitismo: 2 individuos
+%-Algoritmo selección: torneo determinístico P=2 
+%-Algoritmo cruce: 1 punto (Cruzar información después de punto)
+%-Tasa de Cruce (Pc): 90%
+%-Tasa de Mutación (Pm): 2.5
+%-Algoritmo mutación: puntual.
+
+rng(0,'twister') % configuración del control de generación de números aleatorios
+
+% Generación inicial de Individuos
+a=0; % Limite superior para aleatorio
+b=5; % Limite inferior para aleatorio
+r=(b-a)*rand(1000,3)+a;% Formula para generar números aleatorios.
+pobini=roundn(r,-3); % Población inicial con solo dos cifras decimales.
+
+Fitnss=Fitness(SE,pobini)';
+
+for ge=1:10
+    
+    [Pob_temp,Pob_orden,fitness_orden]=Elitismo(pobini,Fitnss); % Organiza 
+    %la población segun el mejor fitness y pasan los dos mejores individuos
+    %a la población temporal.
+    %Pob_temp;
+    Pobla_orden=[Pob_orden fitness_orden];
+    
+    for i=1:(length(pobini)-2)/2 % Se generan de apares para completar la población temporal.
+        
+        [Padre1,Padre2]=seleccion_torneo_2(Pobla_orden); % Sale un padre por torneo de dos y el otro al asar
+        [Hijo1,Hijo2]=Cruce(Padre1,Padre2); % Salen hijos cruzados en primer o segundo gen de los padres, si nohay cruce
+        % pasan directo a la población temporal.
+        [Mut1,Mut2]=Mutacion(Hijo1,Hijo2); % Sele hijo aleatorio mutado, un gen y un alelo [0 5].
+        % si ni hay mutación pasan directo a ploblación temporal.
+        
+        Pob_temp=[Pob_temp;Mut1;Mut2]; % se completa la población.
+        
+    end
+    
+    Fint2=Fitness(SE,Pob_temp)'; % calcula el fitness de la población nueva.
+    
+    [xi,yi]=sort(Fint2); % ordena el fitness de menor a mayor xi and yi es la posisción
+    % del individuo.
+    fitness_orden; % visualización del fitness
+    
+    Pobla_ordenueva=[]; 
+    % Organizar población nueva segun su fitness
+    for i=1:length(Pob_temp)
+        Pobla_ordenueva=[Pobla_ordenueva;Pob_temp(yi(i),:)]; 
+        %Organiza la población de individuos de mejor a peor fitness
+    end
+    pobini=Pobla_ordenueva; %Asigno población nueva como población para la siguiente generación
+    Pobla_ordenueva=[Pobla_ordenueva,xi]; % concateno los fitness de cada individuo.
+    
+    Fitnss=Fint2; % fitness viejo lo actulizo con el nuevo para calculos.
+end
+ge % Visualizo las generaciones
+Pobla_ordenueva % Visualizo la población final con fitness
+
+b=SE(:,end)
+bc=SE(:,1:3)*Pobla_ordenueva(1,1:3)'
+
+    
+    
+    
+        
+        
+        
+        
+        
+        
+
+
+
+
+

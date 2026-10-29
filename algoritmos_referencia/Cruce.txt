@@ -1,0 +1,48 @@
+% Cruce entre padres seleccionados en la función selección por torneo.
+function [hijo1,hijo2]=Cruce(padre1,padre2)
+
+Pc=0.9; %Probabilidad de cruce. Si es menor hay cruce de individuos, de lo 
+%contrario no hay.
+% Número para ver si existe cruce o no.
+a=0; % Limite inferior para cruce aleaatorio.
+b=1; % Limite superior para cruce aleaatorio.
+cruz=(b-a)*rand(1,1)+a; % Formula para generar números aleatorios.
+
+% Número para seleccionar en qué gen se realizara el corte de un punto.
+a=1; % Limite inferior para número aleatorio para punto de cruce gen=1 [X curzar cruza ...],
+ %gen=2 seleción del gen dos para cruce [X X cruzar cruzar ....]
+b=length(padre1)-1; % limite superior para número aleatorio para punto de cruce.
+r=(b-a)*rand(1,1)+a; % Formula para generar números aleatorios.
+punto=round(r); % Punto para cruzar.
+
+auxcruz=[];
+
+if cruz<=Pc
+    % Hay cruce
+    
+    if punto==1 % gen=1 [X cruzar cruza ...]
+        auxcruz=padre1(2:end); 
+        padre1(2:end)=[];
+        hijo1=[padre1 padre2(2:end)];
+        padre2(2:end)=[];
+        hijo2=[padre2 auxcruz];
+    else
+        auxcruz=padre1(3:end); % gen=2 [X X cruzar cruzar ...]
+        padre1(3:end)=[];
+        hijo1=[padre1 padre2(3:end)];
+        padre2(3:end)=[];
+        hijo2=[padre2 auxcruz];
+    end
+else 
+    % Si la probabilidad de cruce no se cumple se aplica el operador de
+    % copia. Los padres pasan directamente a ser los hijos a mutar.
+    hijo1=padre1;
+    hijo2=padre2;
+end
+end
+    
+
+
+
+
+

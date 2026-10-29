@@ -1,0 +1,35 @@
+% Esta función recibe la población y las ecuaciones para calcular la bondad
+% (aptitud) o fitness de la población.
+
+function [fitss]=Fitness(Sist_ec,pobla)
+
+[f,c]=size(pobla); % cálculo las dimensiones de la población.
+
+b=Sist_ec(:,c+1); %cálculo o extraigo del sistema de ecuaciones el valor deseado
+
+Sist_ec(:,end)=[]; %Recorto el valor deseado del sistema de ecuaciones.
+
+aux1=0; % Variable auxiliar 
+aux2=0; % Cariable auxiliar
+fitss=0;  % campo donde retorna el valor de bondad fitness
+
+for i=1:f % Ciclo for para evaluar cada individuo de la población
+    for j=1:c
+    aux1(j)=Sist_ec(j,:)*pobla(i,:)'; % Se multiplica coeficientes por cada individuo y se suma el lado
+    %izquierdo
+    aux2(j)=abs(b(j)-aux1(j)); % Se cálcula el valor absoluto 
+    end
+    fitss(i)=sum(aux2); % Sumatoria de fitness total del sistema para el individuo i
+    aux1=0;
+    aux2=0; 
+end
+end
+
+
+    
+    
+    
+    
+    
+    
+    

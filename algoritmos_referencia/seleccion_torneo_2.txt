@@ -1,0 +1,24 @@
+% Selección por medio de torneo deterministico p=2, pero selecciono al azar por
+% torneo de selección un padre para cruce y aleatoriamente el otro
+% individuo.
+function [Padre1,Padre2]=seleccion_torneo_2(pobla)
+
+padreaux1=pobla(randi([1 length(pobla)],[1]),:); % Número aleatorio de 1 al
+%tamaño de la población para selección de padre aux1 por torneo.
+padreaux2=pobla(randi([1 length(pobla)],[1]),:); % Número aleatorio de 1 al
+%tamaño de la población para selección de padre aux2 por torneo.
+
+if (padreaux1(length(padreaux1)))>(padreaux2(length(padreaux2)))
+   Padre1=padreaux1; % Seleccion de Padre 1 según mejor fitness.
+else
+   Padre1=padreaux2; % Seleccion de Padre 1 según mejor fitness.
+end
+
+Padre2=pobla(randi([1 length(pobla)],[1]),:); % Número aleatorio de 1 al 
+% tamaño de la población para seleccionar segundo padre.
+
+Padre1(length(Padre1))=[];
+Padre2(length(Padre2))=[];
+end
+
+
