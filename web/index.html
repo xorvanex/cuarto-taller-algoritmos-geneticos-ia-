@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EvoSuite AI — Taller Algoritmos Genéticos</title>
+  <meta name="description" content="Dashboard interactivo para el Cuarto Taller de Algoritmos Genéticos — IA Corte 3, 2026. Palmera Navarro & Camargo Padilla." />
+
+  <!-- ══ Google Fonts ══════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- ══ Chart.js (CDN — sin backend) ═════════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- ══ Design System ═════════════════════════════════════ -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+<div id="app">
+
+  <!-- ════════════════════════════════════════════════════════
+       TOP BAR
+       ════════════════════════════════════════════════════════ -->
+  <header class="topbar">
+
+    <!-- Brand -->
+    <div class="topbar-brand">
+      <div class="topbar-logo" aria-hidden="true">
+        <!-- Icono SVG: ADN / evolución -->
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3C9.8 3 8 4.8 8 7c0 1.6.9 3 2.2 3.7L8 13c-.8.5-1 1.5-.5 2.3.3.5.8.7 1.3.7h6.4c.5 0 1-.2 1.3-.7.5-.8.3-1.8-.5-2.3l-2.2-2.3C14.9 10 16 8.6 16 7c0-2.2-1.8-4-4-4Zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2Zm-2 10h4l-2 4-2-4Z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="topbar-title">EvoSuite AI</div>
+        <div class="topbar-subtitle">Algoritmos Genéticos · IA Corte 3 · 2026</div>
+      </div>
+    </div>
+
+    <!-- Tabs de navegación -->
+    <nav class="topbar-tabs" role="tablist" aria-label="Problemas del taller">
+
+      <button class="tab-btn active" data-tab="vrp" role="tab" aria-selected="true" aria-controls="tab-vrp">
+        <!-- Icono: camión / ruta -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+        <span>VRP — Rutas</span>
+        <span class="tab-badge">P1</span>
+      </button>
+
+      <button class="tab-btn" data-tab="pcb" role="tab" aria-selected="false" aria-controls="tab-pcb">
+        <!-- Icono: circuito -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>
+        </svg>
+        <span>PCB — Circuitos</span>
+        <span class="tab-badge soon">P2</span>
+      </button>
+
+      <button class="tab-btn" data-tab="markowitz" role="tab" aria-selected="false" aria-controls="tab-markowitz">
+        <!-- Icono: gráfica / cartera -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span>Markowitz — Cartera</span>
+        <span class="tab-badge soon">P3</span>
+      </button>
+
+      <button class="tab-btn" data-tab="comparador" role="tab" aria-selected="false" aria-controls="tab-comparador">
+        <!-- Icono: tabla comparativa -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>
+        </svg>
+        <span>Comparador</span>
+      </button>
+    </nav>
+
+    <!-- Status pill -->
+    <div class="topbar-meta">
+      <div class="status-pill" role="status" aria-live="polite">
+        <div class="status-dot ready" id="status-dot"></div>
+        <span id="status-label">Listo</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════════
+       MAIN LAYOUT
+       ════════════════════════════════════════════════════════ -->
+  <div class="main-layout">
+
+    <!-- ── Sidebar ──────────────────────────────────────────── -->
+    <aside class="sidebar" aria-label="Panel de configuración">
+
+      <!-- Sección: Modo -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Modo de Simulación</div>
+
+        <div class="mode-toggle" role="group" aria-label="Modo">
+          <button class="mode-btn active" data-mode="catedra" title="Parámetros exactos del caso base del taller">
+            Cátedra
+          </button>
+          <button class="mode-btn" data-mode="libre" title="Modificar parámetros libremente">
+            Libre
+          </button>
+        </div>
+
+        <p class="text-xs text-muted" style="line-height:1.6">
+          <strong class="text-accent">Cátedra:</strong> parámetros exactos del caso base.<br>
+          <strong style="color:var(--primary)">Libre:</strong> ajusta cualquier valor con los sliders.
+        </p>
+      </div>
+
+      <!-- Sección: Parámetros del SGA -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Parámetros SGA</div>
+
+        <!-- N — Tamaño de población -->
+        <div class="param-group">
+          <div class="param-label">
+            <span>Población (N)</span>
+            <span id="val-popsize">1000</span>
+          </div>
+          <div class="param-desc">Número de individuos por generación</div>
+          <input
+            type="range" id="sl-popsize" class="param-slider"
+            min="50" max="2000" step="50" value="1000"
+            disabled aria-label="Tamaño de población"
+          />
+        </div>
+
+        <!-- Elitismo -->
+        <div class="param-group">
+          <div class="param-label">
+            <span>Elitismo (k)</span>
+            <span id="val-elitism">2</span>
+          </div>
+          <div class="param-desc">Élites que pasan sin modificarse</div>
+          <input
+            type="range" id="sl-elitism" class="param-slider"
+            min="0" max="10" step="1" value="2"
+            disabled aria-label="Número de élites"
+          />
+        </div>
+
+        <!-- Pc — Probabilidad de cruce -->
+        <div class="param-group">
+          <div class="param-label">
+            <span>Cruce SPX (P<sub style="font-style:normal">c</sub>)</span>
+            <span id="val-pc">90%</span>
+          </div>
+          <div class="param-desc">Probabilidad de cruce por pareja</div>
+          <input
+            type="range" id="sl-pc" class="param-slider"
+            min="0" max="100" step="1" value="90"
+            disabled aria-label="Probabilidad de cruce"
+          />
+        </div>
+
+        <!-- Pm — Probabilidad de mutación -->
+        <div class="param-group">
+          <div class="param-label">
+            <span>Mutación puntual (P<sub style="font-style:normal">m</sub>)</span>
+            <span id="val-pm">2.0%</span>
+          </div>
+          <div class="param-desc">Probabilidad de mutación por gen</div>
+          <input
+            type="range" id="sl-pm" class="param-slider"
+            min="0" max="20" step="0.5" value="2"
+            disabled aria-label="Probabilidad de mutación"
+          />
+        </div>
+
+        <!-- Generaciones -->
+        <div class="param-group">
+          <div class="param-label">
+            <span>Generaciones máx.</span>
+            <span id="val-maxgens">150</span>
+          </div>
+          <div class="param-desc">Criterio de parada por iteración</div>
+          <input
+            type="range" id="sl-maxgens" class="param-slider"
+            min="10" max="500" step="10" value="150"
+            disabled aria-label="Generaciones máximas"
+          />
+        </div>
+
+        <!-- Restaurar caso base -->
+        <button class="btn-restore" id="btn-restore-side" title="Volver a los parámetros exactos del caso base de cátedra">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+          </svg>
+          Restaurar Caso Base
+        </button>
+      </div>
+
+      <!-- Sección: Velocidad de Animación -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Velocidad</div>
+        <div class="speed-group">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          <input type="range" id="sl-speed" min="1" max="10" step="1" value="5" style="flex:1" aria-label="Velocidad de animación"/>
+          <span id="val-speed" class="mono text-xs">5x</span>
+        </div>
+      </div>
+
+      <!-- Sección: Info del caso base -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Caso Base</div>
+        <div class="info-grid">
+          <div class="info-chip">
+            <div class="info-chip-label">Clientes</div>
+            <div class="info-chip-value">15</div>
+          </div>
+          <div class="info-chip">
+            <div class="info-chip-label">Camiones</div>
+            <div class="info-chip-value">3</div>
+          </div>
+          <div class="info-chip">
+            <div class="info-chip-label">Capacidad</div>
+            <div class="info-chip-value">120 kg</div>
+          </div>
+          <div class="info-chip">
+            <div class="info-chip-label">Turno</div>
+            <div class="info-chip-value">480 min</div>
+          </div>
+          <div class="info-chip">
+            <div class="info-chip-label">D_ideal</div>
+            <div class="info-chip-value">235 km</div>
+          </div>
+          <div class="info-chip">
+            <div class="info-chip-label">D_worst</div>
+            <div class="info-chip-value">750 km</div>
+          </div>
+        </div>
+
+        <p class="text-xs text-muted" style="margin-top:4px; line-height:1.6">
+          Fitness normalizado: umbral ≤ 10⁻²<br>
+          Aptitud biológica → 1 en convergencia<br>
+          <span class="text-accent">Normalización aprobada en tutoría</span><br>
+          <span style="color:var(--muted-dim)">Ing. M. A. Ospina — 29/oct/2026</span>
+        </p>
+      </div>
+
+    </aside>
+
+    <!-- ── Content Area ──────────────────────────────────────── -->
+    <main class="content-area" role="main">
+
+      <!-- ════════════════════════════════════
+           TAB 1 — PROBLEMA 1: VRP
+           ════════════════════════════════════ -->
+      <section class="tab-panel active" id="tab-vrp" role="tabpanel" aria-labelledby="tab-vrp-btn">
+
+        <!-- KPI Bar -->
+        <div class="kpi-bar" aria-label="Indicadores clave">
+
+          <div class="kpi-card kpi-accent">
+            <div class="kpi-label">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+              Mejor Fitness
+            </div>
+            <div class="kpi-value mono" id="kpi-fitness">—</div>
+            <div class="kpi-sub">Fitness normalizado [0,1]</div>
+          </div>
+
+          <div class="kpi-card kpi-primary">
+            <div class="kpi-label">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Distancia Total
+            </div>
+            <div class="kpi-value mono" id="kpi-dist">—</div>
+            <div class="kpi-sub">Distancia acumulada de rutas</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Factibilidad
+            </div>
+            <div class="kpi-value mono" id="kpi-feasible">—</div>
+            <div class="kpi-sub">Restricciones sin violación</div>
+          </div>
+
+          <div class="kpi-card kpi-warning">
+            <div class="kpi-label">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+              Aptitud Biológica
+            </div>
+            <div class="kpi-value mono" id="kpi-aptitud">—</div>
+            <div class="kpi-sub">1 − fitness → tiende a 1</div>
+          </div>
+
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-meta">
+            <span id="gen-counter-label" class="mono text-xs">Gen <span>0</span> / 150</span>
+            <span id="conv-badge" class="badge badge-info">● Listo</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <!-- Split: Canvas + Convergencia -->
+        <div class="viz-row">
+
+          <!-- Panel: Mapa VRP -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M12 8v4l3 3"/>
+                </svg>
+                Mapa de Rutas — VRP
+              </div>
+              <div class="panel-actions">
+                <div class="tooltip-wrap">
+                  <button class="btn-icon" id="btn-export-map" title="Descargar imagen de rutas (PNG)" aria-label="Descargar imagen">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
+                  <span class="tooltip-text">Exportar PNG</span>
+                </div>
+                <div class="tooltip-wrap">
+                  <button class="btn-icon" id="btn-reset" title="Reiniciar simulación" aria-label="Reiniciar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                    </svg>
+                  </button>
+                  <span class="tooltip-text">Reiniciar</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-body" style="position:relative">
+              <canvas id="vrp-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+              <div id="canvas-tooltip" role="tooltip"></div>
+            </div>
+
+            <!-- Leyenda de rutas -->
+            <div class="route-legend" role="legend" aria-label="Leyenda de camiones">
+              <div class="legend-item">
+                <div class="legend-dot" style="background:#10B981"></div>
+                <span>Camión 1</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:#3B82F6"></div>
+                <span>Camión 2</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:#F59E0B"></div>
+                <span>Camión 3</span>
+              </div>
+              <div class="legend-item" style="margin-left:auto">
+                <div class="legend-dot" style="background:#F8FAFC; border: 1px solid #10B981"></div>
+                <span>Depósito</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel: Convergencia -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+                Convergencia del SGA
+              </div>
+              <div class="panel-actions">
+                <span class="text-xs text-muted mono" style="padding:0 4px">Escala log</span>
+              </div>
+            </div>
+            <div class="panel-body" style="padding:12px 12px 8px">
+              <canvas id="convergence-chart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Control Bar -->
+        <div class="control-bar" role="toolbar" aria-label="Controles de simulación">
+
+          <!-- Ejecutar -->
+          <button class="btn-primary" id="btn-run" aria-label="Ejecutar algoritmo genético">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>
+            Ejecutar
+          </button>
+
+          <!-- Pausar -->
+          <button class="btn-secondary" id="btn-pause" disabled aria-label="Pausar ejecución">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            Pausar
+          </button>
+
+          <!-- Paso a paso -->
+          <button class="btn-secondary" id="btn-step" aria-label="Avanzar una generación">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg>
+            Paso a Paso
+          </button>
+
+          <div class="control-sep"></div>
+
+          <!-- Restaurar caso base -->
+          <button class="btn-secondary" id="btn-restore" title="Restaurar parámetros del caso base de cátedra" aria-label="Restaurar caso base">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10"/><path d="M12 8v4l3 3"/><path d="M22 12h-4l-2-2"/>
+            </svg>
+            Caso Base
+          </button>
+
+          <div class="control-sep"></div>
+
+          <!-- Generación actual -->
+          <span class="gen-counter" id="gen-counter-label-bar" aria-live="polite">
+            Gen <span>0</span> / 150
+          </span>
+
+        </div>
+
+        <!-- Tabla de Población -->
+        <div class="pop-table-wrap">
+          <div class="pop-table-header">
+            <div class="pop-table-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              Top 8 Individuos — Generación Actual
+            </div>
+            <span class="kpi-label" style="font-size:0.6875rem; color:var(--muted-dim)">
+              Torneo asimétrico · SPX · Mutación puntual
+            </span>
+          </div>
+
+          <table aria-label="Mejores individuos de la generación actual">
+            <thead>
+              <tr>
+                <th scope="col">Rango</th>
+                <th scope="col">Fitness (norm.)</th>
+                <th scope="col">Aptitud biológica</th>
+                <th scope="col">Barra aptitud</th>
+              </tr>
+            </thead>
+            <tbody id="pop-tbody">
+              <tr>
+                <td colspan="4" style="text-align:center; color:var(--muted-dim); padding:20px; font-family:var(--font-mono); font-size:0.8rem">
+                  Presiona <strong style="color:var(--accent)">Ejecutar</strong> para iniciar el SGA
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+      <!-- ════════════════════════════════════
+           TAB 2 — PROBLEMA 2: PCB
+           ════════════════════════════════════ -->
+      <section class="tab-panel" id="tab-pcb" role="tabpanel">
+        <div class="coming-soon-panel">
+          <div class="coming-soon-icon">
+            <!-- Icono circuito -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/>
+              <path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>
+            </svg>
+          </div>
+          <div class="coming-soon-title">Problema 2 — PCB Layout</div>
+          <p class="coming-soon-desc">
+            Optimización del diseño de circuitos electrónicos.<br>
+            El AG minimizará el área de la placa y la longitud total del ruteo,
+            sujeto a restricciones de separación mínima entre componentes.
+          </p>
+          <div class="chips-row">
+            <span class="tech-chip">Cromosoma: posiciones continuas (x,y)</span>
+            <span class="tech-chip">Fitness: área + ruteo (normalizado)</span>
+            <span class="tech-chip">λ penalización de separación</span>
+            <span class="tech-chip">Visualización: canvas 2D interactivo</span>
+          </div>
+          <p style="font-size:0.75rem; color:var(--muted-dim); font-family:var(--font-mono)">
+            🚧 En implementación — Capítulos 9–13 del informe
+          </p>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════
+           TAB 3 — PROBLEMA 3: MARKOWITZ
+           ════════════════════════════════════ -->
+      <section class="tab-panel" id="tab-markowitz" role="tabpanel">
+        <div class="coming-soon-panel">
+          <div class="coming-soon-icon">
+            <!-- Icono gráfica bursátil -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+            </svg>
+          </div>
+          <div class="coming-soon-title">Problema 3 — Cartera Markowitz</div>
+          <p class="coming-soon-desc">
+            Optimización de portafolio de inversiones.<br>
+            El AG maximizará el retorno ajustado al riesgo (Sharpe ratio),
+            trazando la frontera eficiente de Markowitz en el plano Retorno–Riesgo.
+          </p>
+          <div class="chips-row">
+            <span class="tech-chip">Cromosoma: pesos w ∈ [0,1]ⁿ, Σwᵢ = 1</span>
+            <span class="tech-chip">Fitness: −Sharpe ratio</span>
+            <span class="tech-chip">Restricción: ≤40% por activo</span>
+            <span class="tech-chip">Frontera eficiente interactiva</span>
+          </div>
+          <p style="font-size:0.75rem; color:var(--muted-dim); font-family:var(--font-mono)">
+            🚧 En implementación — Capítulos 14–18 del informe
+          </p>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════
+           TAB 4 — COMPARADOR
+           ════════════════════════════════════ -->
+      <section class="tab-panel" id="tab-comparador" role="tabpanel">
+
+        <div class="panel-card" style="flex:none">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>
+              </svg>
+              Comparador de los 3 Problemas
+            </div>
+          </div>
+        </div>
+
+        <div class="comparador-grid">
+
+          <!-- Problema 1: VRP -->
+          <div class="prob-summary-card">
+            <div class="prob-summary-icon vrp">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="3" width="15" height="13" rx="1"/>
+                <path d="M16 8h4l3 3v5h-7V8z"/>
+                <circle cx="5.5" cy="18.5" r="2.5"/>
+                <circle cx="18.5" cy="18.5" r="2.5"/>
+              </svg>
+            </div>
+            <div>
+              <div class="prob-summary-name">VRP — Rutas de Entrega</div>
+              <div class="prob-summary-status">Implementado ✓ — Ejecutar en Tab P1</div>
+            </div>
+            <div class="prob-stat-list">
+              <div class="prob-stat-row">
+                <span>Codificación</span>
+                <span>RKGA (Random Keys)</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Clientes / Vehículos</span>
+                <span>15 / 3</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Capacidad camión</span>
+                <span>120 kg</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Fitness cátedra (mejor)</span>
+                <span id="comp-vrp-fitness">—</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Dist. total (mejor)</span>
+                <span id="comp-vrp-dist">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Problema 2: PCB -->
+          <div class="prob-summary-card">
+            <div class="prob-summary-icon pcb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                <rect x="9" y="9" width="6" height="6"/>
+                <path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>
+              </svg>
+            </div>
+            <div>
+              <div class="prob-summary-name">PCB — Diseño de Circuitos</div>
+              <div class="prob-summary-status">Pendiente — Capítulos 9–13</div>
+            </div>
+            <div class="prob-stat-list">
+              <div class="prob-stat-row">
+                <span>Codificación</span>
+                <span>Posiciones continuas (x,y)</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Componentes</span>
+                <span>—</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Objetivo</span>
+                <span>Área + Ruteo mín.</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Fitness (mejor)</span>
+                <span>—</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Estado</span>
+                <span class="badge badge-warning" style="font-size:0.625rem">Próximamente</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Problema 3: Markowitz -->
+          <div class="prob-summary-card">
+            <div class="prob-summary-icon mrk">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                <polyline points="16 7 22 7 22 13"/>
+              </svg>
+            </div>
+            <div>
+              <div class="prob-summary-name">Markowitz — Portafolio</div>
+              <div class="prob-summary-status">Pendiente — Capítulos 14–18</div>
+            </div>
+            <div class="prob-stat-list">
+              <div class="prob-stat-row">
+                <span>Codificación</span>
+                <span>Pesos wᵢ ∈ [0,1], Σ=1</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Activos</span>
+                <span>—</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Objetivo</span>
+                <span>Max. Sharpe ratio</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Fitness (mejor)</span>
+                <span>—</span>
+              </div>
+              <div class="prob-stat-row">
+                <span>Estado</span>
+                <span class="badge badge-warning" style="font-size:0.625rem">Próximamente</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Tabla comparativa de parámetros comunes -->
+        <div class="pop-table-wrap">
+          <div class="pop-table-header">
+            <div class="pop-table-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              Parámetros SGA Comunes a los 3 Problemas
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Parámetro</th>
+                <th>Valor (caso base)</th>
+                <th>Operador / Criterio</th>
+                <th>Referencia MATLAB</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Tamaño de población (N)</td>
+                <td>1 000</td>
+                <td>Inicialización aleatoria uniforme</td>
+                <td>SELPruebaAG.m</td>
+              </tr>
+              <tr>
+                <td>Elitismo (k)</td>
+                <td>2</td>
+                <td>Copia directa sin modificar</td>
+                <td>Elitismo.m</td>
+              </tr>
+              <tr>
+                <td>Selección</td>
+                <td>Torneo asimétrico (p=2)</td>
+                <td>P1=torneo, P2=aleatorio</td>
+                <td>seleccion_torneo_2.m</td>
+              </tr>
+              <tr>
+                <td>Cruce (Pc)</td>
+                <td>90 %</td>
+                <td>SPX (Single-Point Crossover)</td>
+                <td>Cruce.m</td>
+              </tr>
+              <tr>
+                <td>Mutación (Pm)</td>
+                <td>2 %</td>
+                <td>Puntual por gen</td>
+                <td>Mutacion.m</td>
+              </tr>
+              <tr>
+                <td>Parada</td>
+                <td>fitness ≤ 10⁻² o 150 gens</td>
+                <td>Fitness normalizado [0,1]</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+  </div><!-- /.main-layout -->
+
+</div><!-- /#app -->
+
+<!-- ════════════════════════════════════════════════════════════
+     MOTOR JS — después del DOM para acceder a los elementos
+     ════════════════════════════════════════════════════════════ -->
+<script src="app.js"></script>
+
+</body>
+</html>

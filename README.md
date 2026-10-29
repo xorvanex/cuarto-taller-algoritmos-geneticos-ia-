@@ -20,18 +20,19 @@ La estructura del directorio sigue el estándar establecido en los talleres ante
 
 ```text
 cuarto-taller-algoritmos-geneticos-ia/
+├── web/                                  # Dashboard interactivo Dark-Tech (HTML5 + CSS3 + JS, sin backend)
+│   ├── index.html                        # Interfaz gráfica interactiva SPA con simulación en vivo
+│   ├── styles.css                        # Design System Glassmorphism Dark-Tech (Fira Code + Inter)
+│   └── app.js                            # Motor SGA completo en JS (RKGA, canvas VRP, Chart.js)
+├── index.html                            # Acceso directo / redirección al dashboard (GitHub Pages)
 ├── data/                                 # Datos de entrada, matrices y configuración de problemas
-├── docs/                                 # Documentación oficial y especificaciones de la prueba
-│   └── Prueba final AG.pdf               # Enunciado oficial de la actividad de trabajo colaborativo
-├── algoritmos_referencia/                # Códigos base vistos en clase (convertidos a .txt limpios)
-│   ├── Cruce.txt                         # Operador de cruce en un punto (SPX) con probabilidad Pc=0.9
-│   ├── Elitismo.txt                      # Operador de elitismo (preserva los 2 mejores individuos)
-│   ├── Fitness.txt                       # Función de evaluación de bondad/aptitud (error absoluto)
-│   ├── Mutacion.txt                      # Operador de mutación puntual con alelo aleatorio (Pm)
-│   ├── seleccion_torneo_2.txt            # Selección por torneo determinístico p=2 y selección aleatoria
-│   └── SELPruebaAG.txt                   # Algoritmo genético canónico completo para sistema 3x3
-├── src/                                  # Implementación en desarrollo para los problemas del trabajo final
-├── Entrega/                              # Informes finales, capturas de convergencia y entregables
+├── docs/                                 # Documentación oficial, secciones del informe y figuras 300 DPI
+│   ├── secciones/                        # Secciones modulares del informe académico
+│   └── img/                              # Figuras científicas exportadas
+├── algoritmos_referencia/                # Códigos base de cátedra en MATLAB (.txt)
+├── src/                                  # Implementación modular en Python (core SGA, VRP)
+├── Entrega/                              # Documento final en formato Word (.docx)
+├── main.py                               # CLI unificado para ejecución y auditoría
 └── README.md                             # Documentación global del entorno de trabajo
 ```
 
