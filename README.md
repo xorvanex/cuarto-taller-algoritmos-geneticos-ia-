@@ -20,19 +20,24 @@ La estructura del directorio sigue el estándar establecido en los talleres ante
 
 ```text
 cuarto-taller-algoritmos-geneticos-ia/
-├── web/                                  # Dashboard interactivo Dark-Tech (HTML5 + CSS3 + JS, sin backend)
-│   ├── index.html                        # Interfaz gráfica interactiva SPA con simulación en vivo
-│   ├── styles.css                        # Design System Glassmorphism Dark-Tech (Fira Code + Inter)
-│   └── app.js                            # Motor SGA completo en JS (RKGA, canvas VRP, Chart.js)
-├── index.html                            # Acceso directo / redirección al dashboard (GitHub Pages)
-├── data/                                 # Datos de entrada, matrices y configuración de problemas
+├── data/                                 # Datasets estructurados de resultados generados por Python
+│   └── vrp_results.json                  # Métricas, historial generacional y rutas óptimas certificadas
 ├── docs/                                 # Documentación oficial, secciones del informe y figuras 300 DPI
-│   ├── secciones/                        # Secciones modulares del informe académico
-│   └── img/                              # Figuras científicas exportadas
+│   ├── secciones/                        # Capítulos modulares del informe académico en Markdown
+│   └── img/                              # Figuras científicas exportadas en alta resolución (300 DPI)
 ├── algoritmos_referencia/                # Códigos base de cátedra en MATLAB (.txt)
-├── src/                                  # Implementación modular en Python (core SGA, VRP)
-├── Entrega/                              # Documento final en formato Word (.docx)
-├── main.py                               # CLI unificado para ejecución y auditoría
+├── src/                                  # CÓDIGO FUENTE GLOBAL DEL PROYECTO
+│   ├── main.py                           # CLI unificado, orquestador de modelos y pipeline de exportación
+│   ├── core/                             # Motor SGA universal parametrizable (ga_engine.py)
+│   ├── problems/                         # Modelos matemáticos de los problemas (vrp.py, pcb.py, markowitz.py)
+│   └── web/                              # Interfaz visual de usuario (Dashboard SPA Glassmorphism Dark-Tech)
+│       ├── index.html                    # Vista única e interactiva con mapas Canvas 2D y Chart.js
+│       ├── styles.css                    # Design System Dark-Tech con tokens CSS y tipografías Fira Code + Inter
+│       ├── app.js                        # Capa de presentación / visualización y controlador de simulación
+│       └── data/                         # Datasets desacoplados exportados por Python para consumo web directo
+│           ├── vrp_results.json          # Formato JSON estándar
+│           └── vrp_results.js            # Objeto window.VRP_SIMULATION_DATA para ejecución local autónoma
+├── Entrega/                              # Documento final editable en formato Word (.docx)
 └── README.md                             # Documentación global del entorno de trabajo
 ```
 

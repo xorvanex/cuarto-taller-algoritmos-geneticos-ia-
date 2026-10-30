@@ -27,10 +27,24 @@
 /** @typedef {{ id: string, x: number, y: number, demand: number, service: number }} Customer */
 /** @typedef {{ x: number, y: number }} Depot */
 
-const VRP_INSTANCE = {
+// Instancia base de referencia (se sobrescribe si Python exportó data/vrp_results.js)
+const PY_DATA = typeof window !== 'undefined' && window.VRP_SIMULATION_DATA ? window.VRP_SIMULATION_DATA : null;
+
+const VRP_INSTANCE = PY_DATA && PY_DATA.instance ? {
+  depot: PY_DATA.instance.depot,
+  customers: PY_DATA.instance.customers,
+  numVehicles: PY_DATA.instance.num_vehicles,
+  capacity: PY_DATA.instance.vehicle_capacity,
+  maxShift: PY_DATA.instance.max_shift_time,
+  speed: PY_DATA.instance.avg_speed,
+  D_ideal: 235.0,
+  D_worst: 750.0,
+  lambda1: 0.05,
+  lambda2: 0.02,
+} : {
   depot: { x: 50, y: 50 },
 
-  /** 15 clientes: coordenadas (x,y) en km, demanda en kg, tiempo servicio en min */
+  /** 15 clientes de cátedra */
   customers: [
     { id: 'C1',  x: 20, y: 30, demand: 15, service: 20 },
     { id: 'C2',  x: 35, y: 15, demand: 18, service: 25 },
@@ -929,8 +943,15 @@ class DashboardController {
     this.renderer     = new VRPRenderer(canvas, VRP_INSTANCE);
     this.chart        = new ConvergenceChart('convergence-chart');
 
-    // GA inicial
-    this._resetGA();
+    // Cargar datos oficiales de Python si están presentes
+    this.pyData = PY_DATA;
+
+    // GA inicial o cargar solución certificada de Python
+    if (this.pyData && this.mode === 'catedra') {
+      this._loadPythonSolution();
+    } else {
+      this._resetGA();
+    }
 
     // Bindings de UI
     this._bindTabs();
@@ -942,7 +963,87 @@ class DashboardController {
     const ro = new ResizeObserver(() => this._redrawCanvas());
     ro.observe(canvas.parentElement);
 
-    this._updateUI();
+    if (this.pyData && this.mode === 'catedra') {
+      this._updateUIFromPython();
+    } else {
+      this._updateUI();
+    }
+  }
+
+  /* ── Cargar solución certificada de Python ──────────────── */
+  _loadPythonSolution() {
+    if (!this.pyData) return;
+    const { history, routes, metrics } = this.pyData;
+
+    // Convertir rutas de Python a índices numéricos para el renderer
+    this.pythonRoutes = routes.map(r => r.stop_indices);
+
+    // Cargar historial en el chart
+    if (history && history.length > 0) {
+      this.chart.update(history);
+    }
+
+    // Renderizar rutas de Python
+    this.renderer.draw(this.pythonRoutes);
+  }
+
+  _updateUIFromPython() {
+    if (!this.pyData) return;
+    const { metrics, history, top_individuals, params } = this.pyData;
+
+    // KPIs con datos reales de Python
+    this._setText('kpi-fitness',    metrics.best_fitness.toFixed(5));
+    this._setText('kpi-dist',       metrics.total_distance_km.toFixed(1) + ' km');
+    this._setText('kpi-feasible',   metrics.is_feasible ? '100%' : 'Penaliz.');
+    this._setText('kpi-gen',        `${metrics.generations_executed} / ${params.max_generations}`);
+    this._setText('kpi-aptitud',    (metrics.best_aptitud * 100).toFixed(2) + '%');
+
+    // Progreso al 100%
+    const fill = document.getElementById('progress-fill');
+    if (fill) fill.style.width = '100%';
+
+    const genLabel = document.getElementById('gen-counter-label');
+    if (genLabel) genLabel.innerHTML = `Gen <span>${metrics.generations_executed}</span> / ${params.max_generations}`;
+
+    const genLabelBar = document.getElementById('gen-counter-label-bar');
+    if (genLabelBar) genLabelBar.innerHTML = `Gen <span>${metrics.generations_executed}</span> / ${params.max_generations}`;
+
+    // Badge
+    const badge = document.getElementById('conv-badge');
+    if (badge) {
+      badge.textContent = '🐍 Python Certificado';
+      badge.className   = 'badge badge-success';
+    }
+
+    // Comparador
+    const compFitness = document.getElementById('comp-vrp-fitness');
+    const compDist    = document.getElementById('comp-vrp-dist');
+    if (compFitness) compFitness.textContent = metrics.best_fitness.toFixed(5);
+    if (compDist)    compDist.textContent    = metrics.total_distance_km.toFixed(1) + ' km';
+
+    // Tabla de top individuos generada por Python
+    const tbody = document.getElementById('pop-tbody');
+    if (tbody && top_individuals) {
+      tbody.innerHTML = top_individuals.map(ind => {
+        const barPct = (ind.aptitud * 100).toFixed(1);
+        return `
+          <tr>
+            <td>#${ind.rank}</td>
+            <td>${ind.fitness.toFixed(6)}</td>
+            <td>${(ind.aptitud * 100).toFixed(2)}%</td>
+            <td>
+              <div class="fitness-bar-cell">
+                <div class="fitness-bar-mini">
+                  <div class="fitness-bar-mini-fill" style="width:${barPct}%"></div>
+                </div>
+                <span>${barPct}%</span>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    this._setStatus('ready');
   }
 
   /* ── Tabs ────────────────────────────────────────────────── */
@@ -1077,10 +1178,15 @@ class DashboardController {
     this._syncSliderLock();
     this._pause();
     this._syncSlidersToParams();
-    this._resetGA();
-    this.chart.clear();
-    this._redrawCanvas();
-    this._updateUI();
+    if (this.pyData) {
+      this._loadPythonSolution();
+      this._updateUIFromPython();
+    } else {
+      this._resetGA();
+      this.chart.clear();
+      this._redrawCanvas();
+      this._updateUI();
+    }
     this._setStatus('ready');
   }
 
@@ -1132,6 +1238,10 @@ class DashboardController {
   }
 
   _redrawCanvas() {
+    if (this.mode === 'catedra' && this.pythonRoutes) {
+      this.renderer.draw(this.pythonRoutes);
+      return;
+    }
     if (!this.ga) return;
     const sol = this.ga.generation > 0 ? this.ga.getBestSolution() : null;
     this.renderer.draw(sol ? sol.routes : null);

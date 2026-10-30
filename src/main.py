@@ -8,24 +8,36 @@ Universidad de Cartagena - Facultad de Ingeniería - Ingeniería de Sistemas
 
 Docente: Ing. Manuel Alejandro Ospina Alarcón
 Autores: Dago David Palmera Navarro & Julián David Camargo Padilla
+
+Arquitectura Modular:
+  - Python ('src/'): Ejecuta los modelos matemáticos, decodificación, operadores y estadísticas.
+  - Exportación ('data/' y 'src/web/data/'): Exporta los resultados reales a JSON/JS.
+  - Interfaz Web ('src/web/'): Capa pura de presentación visual en Glassmorphism Dark-Tech.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
+from typing import Optional
 import numpy as np
 
-# Asegurar importación de src
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-if CURRENT_DIR not in sys.path:
-    sys.path.insert(0, CURRENT_DIR)
+# Configurar rutas del proyecto
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SRC_DIR)
 
-from src.core.ga_engine import SimpleGeneticAlgorithm, GAParams, GenerationStats
+for p in (PROJECT_ROOT, SRC_DIR):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from src.core.ga_engine import SimpleGeneticAlgorithm, GAParams, GenerationStats, GAResult
 from src.problems.vrp import (
     VRPModel,
+    VRPInstance,
+    VRPSolution,
     create_default_vrp_instance,
     plot_vrp_solution,
     plot_vrp_convergence,
@@ -40,6 +52,123 @@ def print_banner() -> None:
     print("   CUARTO TALLER: ALGORITMOS GENÉTICOS - SUITE DE OPTIMIZACIÓN MULTI-PROBLEMA")
     print("   Autores: Dago David Palmera Navarro & Julián David Camargo Padilla")
     print("=" * 86)
+
+
+def export_vrp_results(
+    result: GAResult,
+    solution: VRPSolution,
+    instance: VRPInstance,
+    params: GAParams,
+    t_elapsed: float,
+) -> None:
+    """
+    Exporta los resultados reales del algoritmo genético VRP a JSON y JS
+    para que la interfaz web ('src/web/') y el pipeline de datos ('data/')
+    los consuman como única fuente de verdad computacional.
+    """
+    data = {
+        "problem": "VRP",
+        "title": "Problema 1: Optimización de Rutas de Entrega (VRP)",
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "execution_time_seconds": round(t_elapsed, 4),
+        "params": {
+            "pop_size": params.pop_size,
+            "elitism_count": params.elitism_count,
+            "crossover_rate": params.crossover_rate,
+            "mutation_rate": params.mutation_rate,
+            "tournament_size": params.tournament_size,
+            "max_generations": params.max_generations,
+            "fitness_tolerance": params.fitness_tolerance,
+            "random_seed": params.random_seed,
+        },
+        "instance": {
+            "depot": {"x": instance.depot[0], "y": instance.depot[1]},
+            "num_vehicles": instance.num_vehicles,
+            "vehicle_capacity": instance.vehicle_capacity,
+            "max_shift_time": instance.max_shift_time,
+            "avg_speed": instance.avg_speed,
+            "customers": [
+                {
+                    "id": f"C{c.id}",
+                    "name": c.name,
+                    "x": c.x,
+                    "y": c.y,
+                    "demand": c.demand,
+                    "service": c.service_time,
+                }
+                for c in instance.customers
+            ],
+        },
+        "metrics": {
+            "generations_executed": result.generations_executed,
+            "converged_by_tolerance": bool(result.converged_by_tolerance),
+            "best_fitness": round(float(result.best_fitness), 6),
+            "best_aptitud": round(float(max(0.0, 1.0 - result.best_fitness)), 6),
+            "total_distance_km": round(float(solution.total_distance_km), 2),
+            "capacity_violation_kg": round(float(solution.total_capacity_violation), 2),
+            "time_violation_min": round(float(solution.total_time_violation), 2),
+            "is_feasible": bool(solution.is_feasible),
+        },
+        "history": [
+            {
+                "gen": s.generation,
+                "best": round(float(s.best_fitness), 6),
+                "avg": round(float(s.avg_fitness), 6),
+                "worst": round(float(s.worst_fitness), 6),
+                "std": round(float(s.std_fitness), 6),
+            }
+            for s in result.history
+        ],
+        "routes": [
+            {
+                "truck_id": r.truck_id,
+                "stops": [f"C{cid}" for cid in r.stops],
+                "stop_indices": [cid - 1 for cid in r.stops],
+                "distance_km": round(float(r.distance_km), 2),
+                "load_kg": round(float(r.load_kg), 2),
+                "total_time_min": round(float(r.total_time_min), 2),
+                "capacity_violation": round(float(r.capacity_violation), 2),
+                "time_violation": round(float(r.time_violation), 2),
+            }
+            for r in solution.routes
+        ],
+        "top_individuals": [
+            {
+                "rank": rank + 1,
+                "fitness": round(float(result.final_fitness[idx]), 6),
+                "aptitud": round(float(max(0.0, 1.0 - result.final_fitness[idx])), 6),
+                "chromosome_sample": [round(float(g), 2) for g in result.final_population[idx][:6]],
+            }
+            for rank, idx in enumerate(np.argsort(result.final_fitness)[:8])
+        ],
+    }
+
+    # 1. Guardar en data/vrp_results.json
+    global_dir = os.path.join(PROJECT_ROOT, "data")
+    os.makedirs(global_dir, exist_ok=True)
+    global_json = os.path.join(global_dir, "vrp_results.json")
+    with open(global_json, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+    # 2. Guardar en src/web/data/vrp_results.json
+    web_dir = os.path.join(SRC_DIR, "web", "data")
+    os.makedirs(web_dir, exist_ok=True)
+    web_json = os.path.join(web_dir, "vrp_results.json")
+    with open(web_json, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+    # 3. Guardar en src/web/data/vrp_results.js (garantiza ejecución autónoma con doble clic)
+    web_js = os.path.join(web_dir, "vrp_results.js")
+    with open(web_js, "w", encoding="utf-8") as f:
+        f.write("/** Datos de simulación generados automáticamente por Python (src/main.py) */\n")
+        f.write("window.VRP_SIMULATION_DATA = ")
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write(";\n")
+
+    print(f"\n[EXPORTACIÓN MODULAR DE DATOS A LA WEB]")
+    print(f"  [OK] Dataset global:               {global_json}")
+    print(f"  [OK] Dataset web JSON:             {web_json}")
+    print(f"  [OK] Dataset web JS (autónomo):    {web_js}")
 
 
 def run_problem_1_vrp(custom_params: bool = False) -> None:
@@ -148,7 +277,8 @@ def run_problem_1_vrp(custom_params: bool = False) -> None:
         print(f"      Distancia: {r.distance_km:.2f} km | Carga: {r.load_kg:.1f}/{instance.vehicle_capacity:.0f} kg | Tiempo: {r.total_time_min:.1f}/{instance.max_shift_time:.0f} min")
 
     # 5. Generación y Exportación de Figuras de Publicación (300 DPI)
-    img_dir = os.path.join(CURRENT_DIR, "docs", "img")
+    img_dir = os.path.join(PROJECT_ROOT, "docs", "img")
+    os.makedirs(img_dir, exist_ok=True)
     fig1_path = os.path.join(img_dir, "figura1_vrp_rutas_optimas.png")
     fig2_path = os.path.join(img_dir, "figura2_vrp_convergencia.png")
 
@@ -158,7 +288,10 @@ def run_problem_1_vrp(custom_params: bool = False) -> None:
     print(f"  [OK] Mapa de Rutas:           {fig1_path}")
     print(f"  [OK] Curvas de Convergencia:  {fig2_path}")
 
-    # 6. Tabulación para el Informe (Subsecciones 7.1 y 7.2)
+    # 6. Exportación de Datos para la Interfaz Web (Pipeline Desacoplado)
+    export_vrp_results(result, best_solution, instance, params, t_elapsed)
+
+    # 7. Tabulación para el Informe (Subsecciones 7.1 y 7.2)
     print("\n" + "=" * 86)
     print("  TABLA DE POBLACIÓN INICIAL (Muestra primeros 5 individuos - Gen 0)")
     print("=" * 86)
