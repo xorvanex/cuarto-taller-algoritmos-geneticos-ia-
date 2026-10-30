@@ -874,6 +874,8 @@ class ConvergenceChart {
         scales: {
           x: {
             type: 'linear',
+            min: 0,
+            suggestedMax: 150,
             title: {
               display: true,
               text:    'Generación',
@@ -881,7 +883,12 @@ class ConvergenceChart {
               font:    { family: 'Fira Code', size: 10 },
             },
             grid:  { color: 'rgba(255,255,255,0.04)' },
-            ticks: { color: '#64748B', font: { family: 'Fira Code', size: 10 } },
+            ticks: {
+              color: '#64748B',
+              font:  { family: 'Fira Code', size: 10 },
+              precision: 0,
+              callback: (v) => Number.isInteger(v) && v >= 0 ? v : null,
+            },
           },
           y: {
             type:  'logarithmic',
@@ -912,20 +919,35 @@ class ConvergenceChart {
   }
 
   /**
-   * Actualiza la gráfica con el historial completo del GA.
+   * Ajusta dinámicamente el límite superior sugerido del eje horizontal.
+   * @param {number} maxGens
+   */
+  setMaxGens(maxGens) {
+    if (this.chart && this.chart.options && this.chart.options.scales && this.chart.options.scales.x) {
+      this.chart.options.scales.x.suggestedMax = maxGens;
+      this.chart.update('none');
+    }
+  }
+
+  /**
+   * Actualiza la gráfica con el historial completo o rebanado del GA.
    * @param {GenerationStats[]} history
    */
   update(history) {
-    const chart  = this.chart;
+    const chart = this.chart;
+    if (!history || history.length === 0) {
+      this.clear();
+      return;
+    }
     const labels = history.map(s => s.gen);
-    chart.data.labels             = labels;
+    chart.data.labels            = labels;
     chart.data.datasets[0].data  = history.map(s => Math.max(s.best,  1e-7));
     chart.data.datasets[1].data  = history.map(s => Math.max(s.avg,   1e-7));
     chart.data.datasets[2].data  = history.map(s => Math.max(s.worst, 1e-7));
     chart.update('none');
   }
 
-  /** Resetea la gráfica a su estado vacío. */
+  /** Resetea la gráfica a su estado vacío manteniendo la escala. */
   clear() {
     this.chart.data.labels = [];
     this.chart.data.datasets.forEach(d => (d.data = []));
@@ -951,8 +973,9 @@ class DashboardController {
     this.lastTick  = 0;
     this.speedMs   = 40;   // ms entre generaciones (calibrado)
 
-    /* Historial dinámico de rutas en vivo */
-    this.liveGenerationRoutes = [];
+    /* Historial dinámico de rutas y snapshots de generaciones evaluadas */
+    this.liveGenerationRoutes    = [];
+    this.liveGenerationSnapshots = [];
 
     /* Parámetros actuales */
     this.params    = { ...DEFAULT_PARAMS };
@@ -1004,24 +1027,17 @@ class DashboardController {
     // Convertir rutas de Python a índices numéricos para el renderer
     this.pythonRoutes = routes.map(r => r.stop_indices);
 
-    // Cargar historial en el chart
+    // Cargar historial en el chart y adaptar escala horizontal
     if (history && history.length > 0) {
       this.chart.update(history);
+      this.chart.setMaxGens(this.params.maxGens);
     }
 
     // Renderizar rutas de Python
     this.renderer.draw(this.pythonRoutes);
 
-    // Configurar Timeline Slider
-    const sl = document.getElementById('timeline-slider');
-    if (sl) {
-      sl.max = this.params.maxGens;
-      sl.value = this.params.maxGens;
-    }
-    const curDisp = document.getElementById('gen-current-display');
-    const maxDisp = document.getElementById('gen-max-display');
-    if (curDisp) curDisp.textContent = this.params.maxGens;
-    if (maxDisp) maxDisp.textContent = this.params.maxGens;
+    // Configurar Timeline Slider y barra de progreso al 100% de cátedra
+    this._updateSliderVisuals(this.params.maxGens, this.params.maxGens);
   }
 
   _updateUIFromPython() {
@@ -1034,15 +1050,8 @@ class DashboardController {
     this._setText('kpi-feasible',   metrics.is_feasible ? '100%' : 'Penaliz.');
     this._setText('kpi-aptitud',    (metrics.best_aptitud * 100).toFixed(2) + '%');
 
-    // Progreso al 100%
-    const fill = document.getElementById('progress-fill');
-    if (fill) fill.style.width = '100%';
-
-    const genLabel = document.getElementById('gen-counter-label');
-    if (genLabel) genLabel.innerHTML = `Gen <span>${metrics.generations_executed}</span> / ${params.max_generations}`;
-
-    const genLabelBar = document.getElementById('gen-counter-label-bar');
-    if (genLabelBar) genLabelBar.innerHTML = `Gen <span id="gen-current-display">${metrics.generations_executed}</span> / <span id="gen-max-display">${params.max_generations}</span>`;
+    // Sincronizar visuales de slider y contadores
+    this._updateSliderVisuals(metrics.generations_executed, params.max_generations);
 
     // Badge
     const badge = document.getElementById('conv-badge');
@@ -1057,37 +1066,105 @@ class DashboardController {
     if (compFitness) compFitness.textContent = metrics.best_fitness.toFixed(5);
     if (compDist)    compDist.textContent    = metrics.total_distance_km.toFixed(1) + ' km';
 
-    // Tabla de top individuos generada por Python con roles pedagógicos centrados
-    const tbody = document.getElementById('pop-tbody');
-    if (tbody && top_individuals) {
-      tbody.innerHTML = top_individuals.map((ind, i) => {
-        const barPct = (ind.aptitud * 100).toFixed(1);
-        const isElite = i < (this.params.elitism || 2);
-        const roleHtml = isElite
-          ? `<span class="role-badge role-elite">Élite Invariable (k=${i + 1})</span>`
-          : `<span class="role-badge role-tourn">Candidato Torneo (p=2)</span>`;
-        return `
-          <tr>
-            <td class="mono font-semibold">#${ind.rank}</td>
-            <td class="mono font-semibold">${ind.fitness.toFixed(6)}</td>
-            <td class="mono">${(ind.aptitud * 100).toFixed(2)}%</td>
-            <td>${roleHtml}</td>
-            <td>
-              <div class="fitness-bar-cell">
-                <div class="fitness-bar-mini">
-                  <div class="fitness-bar-mini-fill" style="width:${barPct}%"></div>
-                </div>
-                <span class="mono">${barPct}%</span>
-              </div>
-            </td>
-          </tr>`;
-      }).join('');
+    // Renderizar tabla Top 8 de individuos certificados
+    if (top_individuals) {
+      this._renderTop8Table(top_individuals);
     }
-
-    this._setStatus('ready', '🟢 Caso Base Certificado');
   }
 
-  /* ── Acordeones de la barra lateral ──────────────────────── */
+  /* ── Renderizado unificado de tabla Top 8 ─────────────────── */
+  _renderTop8Table(list) {
+    const tbody = document.getElementById('pop-tbody');
+    if (!tbody) return;
+
+    if (!list || list.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; color:var(--muted-dim); padding:20px; font-family:var(--font-mono); font-size:0.8rem">
+            Inicia la simulación para evaluar la población...
+          </td>
+        </tr>`;
+      return;
+    }
+
+    const elitismK = this.params.elitism || 2;
+    tbody.innerHTML = list.map((ind, i) => {
+      const aptVal = ind.aptitud_pct !== undefined 
+        ? ind.aptitud_pct 
+        : (Math.max(0, 1 - ind.fitness) * 100);
+      const fitNum = typeof ind.fitness === 'number' ? ind.fitness : parseFloat(ind.fitness);
+      const isElite = i < elitismK;
+      const roleHtml = isElite
+        ? `<span class="role-badge role-elite">Élite Invariable (k=${i + 1})</span>`
+        : `<span class="role-badge role-tourn">Candidato Torneo (p=2)</span>`;
+      const barPct = Math.min(100, Math.max(0, aptVal)).toFixed(1);
+
+      return `
+        <tr>
+          <td class="mono font-semibold">#${i + 1}</td>
+          <td class="mono font-semibold">${fitNum.toFixed(6)}</td>
+          <td class="mono">${aptVal.toFixed(2)}%</td>
+          <td>${roleHtml}</td>
+          <td>
+            <div class="fitness-bar-cell">
+              <div class="fitness-bar-mini">
+                <div class="fitness-bar-mini-fill" style="width:${barPct}%"></div>
+              </div>
+              <span class="mono text-xs">${barPct}%</span>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  /* ── Visuales de Slider de Línea de Tiempo y Progreso ─────── */
+  _updateSliderVisuals(cur, max) {
+    const sl       = document.getElementById('timeline-slider');
+    const curDisp  = document.getElementById('gen-current-display');
+    const maxDisp  = document.getElementById('gen-max-display');
+    const fill     = document.getElementById('progress-fill');
+    const genLabel = document.getElementById('gen-counter-label');
+
+    const m = max || this.params.maxGens || 150;
+    const c = Math.max(0, Math.min(cur, m));
+    const pct = m > 0 ? (c / m) * 100 : 0;
+    const pctStr = pct.toFixed(1) + '%';
+
+    if (sl) {
+      sl.max   = m;
+      sl.value = c;
+      // Gradiente dinámico en tiempo real: llena la pista de verde esmeralda con el avance relativo
+      sl.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pctStr}, var(--surface-high) ${pctStr}, var(--surface-high) 100%)`;
+    }
+    if (curDisp)  curDisp.textContent = c;
+    if (maxDisp)  maxDisp.textContent = m;
+    if (fill)     fill.style.width    = pctStr;
+    if (genLabel) genLabel.innerHTML  = `Gen <span>${c}</span> / ${m}`;
+  }
+
+  /* ── Ajustar Generaciones Máximas Dinámicamente ───────────── */
+  _setMaxGenerations(newMax) {
+    this.params.maxGens = newMax;
+    if (this.ga) {
+      this.ga.params.maxGens = newMax;
+    }
+
+    if (this.chart) {
+      this.chart.setMaxGens(newMax);
+    }
+
+    const sl = document.getElementById('timeline-slider');
+    let curGen = 0;
+    if (this.running && this.ga) {
+      curGen = this.ga.generation;
+    } else if (sl) {
+      curGen = Math.min(parseInt(sl.value, 10) || 0, newMax);
+    }
+
+    this._updateSliderVisuals(curGen, newMax);
+  }
+
+  /* ── Acordeones laterales ────────────────────────────────── */
   _bindAccordions() {
     document.querySelectorAll('.sidebar-accordion-header').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1128,8 +1205,10 @@ class DashboardController {
         if (this.mode === 'catedra') {
           this._restoreCatedra();
         } else {
+          this._setMaxGenerations(this.params.maxGens);
           this._resetGA();
           this.chart.clear();
+          this.chart.setMaxGens(this.params.maxGens);
           this._redrawCanvas();
           this._updateUI();
         }
@@ -1161,9 +1240,15 @@ class DashboardController {
       if (!sl || !val) return;
       sl.addEventListener('input', () => {
         val.textContent = fn(sl.value);
-        if (key === 'pc') this.params.pc = parseFloat(sl.value) / 100;
-        else if (key === 'pm') this.params.pm = parseFloat(sl.value) / 100;
-        else this.params[key] = parseInt(sl.value, 10);
+        if (key === 'pc') {
+          this.params.pc = parseFloat(sl.value) / 100;
+        } else if (key === 'pm') {
+          this.params.pm = parseFloat(sl.value) / 100;
+        } else if (key === 'maxGens') {
+          this._setMaxGenerations(parseInt(sl.value, 10));
+        } else {
+          this.params[key] = parseInt(sl.value, 10);
+        }
       });
     });
 
@@ -1196,13 +1281,8 @@ class DashboardController {
   _onTimelineScrub(gen) {
     if (this.running) this._pause();
 
-    const curDisp = document.getElementById('gen-current-display');
-    if (curDisp) curDisp.textContent = gen;
-
-    // Actualizar barra de progreso
-    const pct = ((gen / this.params.maxGens) * 100).toFixed(1);
-    const fill = document.getElementById('progress-fill');
-    if (fill) fill.style.width = pct + '%';
+    const maxG = this.params.maxGens;
+    this._updateSliderVisuals(gen, maxG);
 
     // 1. Si estamos en modo Cátedra con datos pre-generados de Python
     if (this.mode === 'catedra' && this.pyData) {
@@ -1218,35 +1298,74 @@ class DashboardController {
 
         // Actualizar KPIs para esa generación
         this._setText('kpi-fitness',  stat.best.toFixed(5));
-        const estDist = gen === this.params.maxGens ? 429.8 : (429.8 + (stat.best - 0.37825) * 450);
+        const estDist = gen === maxG ? 429.8 : (429.8 + (stat.best - 0.37825) * 450);
         this._setText('kpi-dist',     estDist.toFixed(1) + ' km');
         this._setText('kpi-feasible', stat.worst > 500 ? 'Penaliz.' : '100%');
         this._setText('kpi-aptitud',  ((1.0 - Math.min(stat.best, 1.0)) * 100).toFixed(2) + '%');
 
-        // ¡ACTUALIZAR EL GRAFO DE RUTAS REAL PARA ESA GENERACIÓN!
+        // Actualizar el grafo de rutas para esa generación
         if (genRoutes && genRoutes[targetGen]) {
           this.renderer.draw(genRoutes[targetGen]);
-        } else if (gen === this.params.maxGens) {
+        } else if (gen === maxG) {
           this.renderer.draw(this.pythonRoutes);
         }
 
-        this._setStatus('ready', `🔍 Inspección: Gen ${gen} / ${this.params.maxGens}`);
+        // Si es la última generación, mostrar el top 8 original de Python
+        if (gen === maxG && this.pyData.top_individuals) {
+          this._renderTop8Table(this.pyData.top_individuals);
+        }
+
+        this._setStatus('ready', `🔍 Inspección: Gen ${gen} / ${maxG}`);
       }
     } 
-    // 2. Si estamos en modo interactivo/libre (usando rutas guardadas en vivo)
+    // 2. Si estamos en modo interactivo/libre (usando rutas y snapshots guardados en vivo)
     else if (this.ga) {
-      if (this.liveGenerationRoutes[gen]) {
-        this.renderer.draw(this.liveGenerationRoutes[gen]);
+      const maxSimulated = this.ga.generation;
+      const targetGen = Math.min(gen, maxSimulated);
+
+      // Dibujar rutas de la generación seleccionada si existe en el buffer
+      if (this.liveGenerationRoutes && this.liveGenerationRoutes[targetGen]) {
+        this.renderer.draw(this.liveGenerationRoutes[targetGen]);
+      } else if (targetGen === 0 && this.liveGenerationRoutes && this.liveGenerationRoutes[0]) {
+        this.renderer.draw(this.liveGenerationRoutes[0]);
       }
+
+      // Slicing de la gráfica hasta targetGen
       if (this.ga.history && this.ga.history.length > 0) {
-        const targetGen = Math.min(gen, this.ga.history.length - 1);
         this.chart.update(this.ga.history.slice(0, targetGen + 1));
       }
-      this._updateUI();
+
+      // Mostrar snapshot exacto de KPIs y Top 8 para esa generación
+      const snap = this.liveGenerationSnapshots && this.liveGenerationSnapshots[targetGen];
+      if (snap) {
+        this._setText('kpi-fitness',  snap.bestFitness.toFixed(5));
+        this._setText('kpi-dist',     snap.totalDist.toFixed(1) + ' km');
+        this._setText('kpi-feasible', snap.isFeasible ? '100%' : 'Penaliz.');
+        this._setText('kpi-aptitud',  snap.aptitud.toFixed(2) + '%');
+        this._renderTop8Table(snap.top8);
+      } else if (targetGen === 0) {
+        this._setText('kpi-fitness',  '—');
+        this._setText('kpi-dist',     '—');
+        this._setText('kpi-feasible', '—');
+        this._setText('kpi-aptitud',  '—');
+        this._renderTop8Table([]);
+      }
+
+      const badge = document.getElementById('conv-badge');
+      if (badge) {
+        badge.textContent = `🔍 Gen ${targetGen}`;
+        badge.className   = 'badge badge-info';
+      }
+
+      if (gen > maxSimulated) {
+        this._setStatus('ready', `🔍 Gen ${targetGen} (máxima simulada: ${maxSimulated} / ${maxG})`);
+      } else {
+        this._setStatus('ready', `🔍 Inspección: Gen ${gen} / ${maxG}`);
+      }
     }
   }
 
-  /* ── Controles principales ───────────────────────────────── */
+  /* ── Controles de simulación ─────────────────────────────── */
   _bindControls() {
     document.getElementById('btn-run')?.addEventListener('click',     () => this._toggleRun());
     document.getElementById('btn-pause')?.addEventListener('click',   () => this._pause());
@@ -1277,9 +1396,22 @@ class DashboardController {
   _run() {
     if (this.running) return;
 
+    const maxG = this.params.maxGens;
+    this._setMaxGenerations(maxG);
+
     // Si ya completó o está al tope de generaciones, reiniciar desde Gen 0
-    if (!this.ga || this.ga.converged || this.ga.generation >= this.params.maxGens) {
+    if (!this.ga || this.ga.converged || this.ga.generation >= maxG) {
       this._resetGA();
+      this.chart.clear();
+      this.chart.setMaxGens(maxG);
+    } else {
+      // Si estaba pausado o inspeccionando una gen previa, restaurar visuales a la generación actual
+      const g = this.ga.generation;
+      if (this.liveGenerationRoutes[g]) {
+        this.renderer.draw(this.liveGenerationRoutes[g]);
+      }
+      this.chart.update(this.ga.history);
+      this._updateSliderVisuals(g, maxG);
     }
 
     this.running  = true;
@@ -1293,8 +1425,7 @@ class DashboardController {
     this.running = false;
     cancelAnimationFrame(this.rafId);
     this._setRunButtonState(false);
-    this._setStatus('ready', '⏸️ Simulación Pausada');
-    this._updateUI();
+    this._setStatus('ready', `⏸️ Simulación Pausada (Gen ${this.ga ? this.ga.generation : 0})`);
   }
 
   _stepOnce() {
@@ -1303,20 +1434,29 @@ class DashboardController {
       return;
     }
 
-    // Si no ha iniciado o ya terminó, inicializar en Gen 0 para avanzar paso a paso
-    if (!this.ga || this.ga.generation >= this.params.maxGens) {
+    const maxG = this.params.maxGens;
+    this._setMaxGenerations(maxG);
+
+    if (!this.ga || this.ga.generation >= maxG) {
       this._resetGA();
+      this.chart.clear();
+      this.chart.setMaxGens(maxG);
     }
 
-    this._advanceGA();
+    const done = this._advanceGA();
     this._updateUI();
-    this._setStatus('ready', `⏸️ Paso a Paso: Gen ${this.ga.generation}`);
+    if (done) {
+      this._setStatus('done', `✅ Convergencia: Gen ${this.ga.generation}`);
+    } else {
+      this._setStatus('ready', `⏸️ Paso a Paso: Gen ${this.ga.generation} / ${maxG}`);
+    }
   }
 
   _reset() {
     this._pause();
     this._resetGA();
     this.chart.clear();
+    this.chart.setMaxGens(this.params.maxGens);
     this._redrawCanvas();
     this._updateUI();
     this._setStatus('ready', '🟢 Reiniciado a Gen 0');
@@ -1331,6 +1471,7 @@ class DashboardController {
     this._syncSliderLock();
     this._pause();
     this._syncSlidersToParams();
+    this._setMaxGenerations(150);
 
     if (this.pyData) {
       this._loadPythonSolution();
@@ -1338,6 +1479,7 @@ class DashboardController {
     } else {
       this._resetGA();
       this.chart.clear();
+      this.chart.setMaxGens(150);
       this._redrawCanvas();
       this._updateUI();
     }
@@ -1370,6 +1512,7 @@ class DashboardController {
     set('sl-pc',      p.pc * 100);    setTxt('val-pc',      (p.pc*100).toFixed(0) + '%');
     set('sl-pm',      p.pm * 100);    setTxt('val-pm',      (p.pm*100).toFixed(1) + '%');
     set('sl-maxgens', p.maxGens);     setTxt('val-maxgens', p.maxGens);
+    this._setMaxGenerations(p.maxGens);
   }
 
   /* ── Loop de animación ───────────────────────────────────── */
@@ -1395,37 +1538,57 @@ class DashboardController {
   _advanceGA() {
     if (!this.ga) this._resetGA();
     const done = this.ga.step();
+    const g    = this.ga.generation;
+    const maxG = this.params.maxGens;
 
     // Dibujar rutas actuales
     const sol = this.ga.getBestSolution();
     this.renderer.draw(sol.routes);
 
-    // Guardar en el buffer dinámico de rutas por generación
-    this.liveGenerationRoutes[this.ga.generation] = sol.routes;
+    // Guardar en el buffer dinámico de rutas y snapshots por generación
+    this.liveGenerationRoutes[g] = sol.routes;
+    this.liveGenerationSnapshots[g] = {
+      bestFitness: this.ga.bestFitness,
+      totalDist:   sol.totalDist,
+      isFeasible:  sol.penalty === 0,
+      aptitud:     Math.max(0, 1 - this.ga.bestFitness) * 100,
+      top8:        this.ga.getTopK(8).map((ind, i) => ({
+        rank: i + 1,
+        fitness: ind.fitness,
+        aptitud_pct: Math.max(0, 1 - ind.fitness) * 100,
+      })),
+    };
 
-    // Actualizar gráfica
+    // Actualizar gráfica de convergencia en tiempo real
     this.chart.update(this.ga.history);
 
-    // Actualizar Slider del Timeline
-    const sl = document.getElementById('timeline-slider');
-    if (sl) sl.value = this.ga.generation;
-    const curDisp = document.getElementById('gen-current-display');
-    if (curDisp) curDisp.textContent = this.ga.generation;
+    // Sincronizar Slider del Timeline y contadores en tiempo real
+    this._updateSliderVisuals(g, maxG);
 
     return done;
   }
 
   _resetGA() {
     this.ga = new SimpleGeneticAlgorithm(this.params, VRP_INSTANCE);
-    this.liveGenerationRoutes = [];
+    this.liveGenerationRoutes    = [];
+    this.liveGenerationSnapshots = [];
+
     const sol = this.ga.getBestSolution();
     this.liveGenerationRoutes[0] = sol.routes;
-    this.renderer.draw(sol.routes);
+    this.liveGenerationSnapshots[0] = {
+      bestFitness: this.ga.bestFitness,
+      totalDist:   sol.totalDist,
+      isFeasible:  sol.penalty === 0,
+      aptitud:     Math.max(0, 1 - this.ga.bestFitness) * 100,
+      top8:        this.ga.getTopK(8).map((ind, i) => ({
+        rank: i + 1,
+        fitness: ind.fitness,
+        aptitud_pct: Math.max(0, 1 - ind.fitness) * 100,
+      })),
+    };
 
-    const sl = document.getElementById('timeline-slider');
-    if (sl) sl.value = 0;
-    const curDisp = document.getElementById('gen-current-display');
-    if (curDisp) curDisp.textContent = '0';
+    this.renderer.draw(sol.routes);
+    this._updateSliderVisuals(0, this.params.maxGens);
   }
 
   _redrawCanvas() {
@@ -1440,11 +1603,17 @@ class DashboardController {
       return;
     }
     if (!this.ga) return;
-    const sol = this.ga.generation > 0 ? this.ga.getBestSolution() : null;
-    this.renderer.draw(sol ? sol.routes : null);
+    const sl = document.getElementById('timeline-slider');
+    const gen = sl ? parseInt(sl.value, 10) : (this.ga.generation || 0);
+    if (this.liveGenerationRoutes && this.liveGenerationRoutes[gen]) {
+      this.renderer.draw(this.liveGenerationRoutes[gen]);
+    } else {
+      const sol = this.ga.generation > 0 ? this.ga.getBestSolution() : null;
+      this.renderer.draw(sol ? sol.routes : null);
+    }
   }
 
-  /* ── Actualización de KPIs y tabla ──────────────────────── */
+  /* ── Actualización de KPIs y badge en vivo ───────────────── */
   _updateUI() {
     if (!this.ga) return;
     const ga  = this.ga;
@@ -1464,17 +1633,6 @@ class DashboardController {
       this._setText('kpi-aptitud',  apt.toFixed(2) + '%');
     }
 
-    // Progreso
-    const pct = ((ga.generation / this.params.maxGens) * 100).toFixed(1);
-    const fill = document.getElementById('progress-fill');
-    if (fill) fill.style.width = pct + '%';
-
-    const genLabel = document.getElementById('gen-counter-label');
-    if (genLabel) genLabel.innerHTML = `Gen <span>${ga.generation}</span> / ${this.params.maxGens}`;
-
-    const genLabelBar = document.getElementById('gen-counter-label-bar');
-    if (genLabelBar) genLabelBar.innerHTML = `Gen <span id="gen-current-display">${ga.generation}</span> / <span id="gen-max-display">${this.params.maxGens}</span>`;
-
     // Badge
     const badge = document.getElementById('conv-badge');
     if (badge) {
@@ -1490,42 +1648,15 @@ class DashboardController {
       }
     }
 
-    // Tabla de mejores individuos con rol evolutivo centrado
-    const tbody = document.getElementById('pop-tbody');
-    if (tbody) {
-      if (ga.generation === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5" style="text-align:center; color:var(--muted-dim); padding:20px; font-family:var(--font-mono); font-size:0.8rem">
-              Inicia la simulación para evaluar la población...
-            </td>
-          </tr>`;
-      } else {
-        const top8 = ga.getTopK(8);
-        tbody.innerHTML = top8.map((ind, i) => {
-          const aptitud = Math.max(0, 1 - ind.fitness);
-          const barPct  = (aptitud * 100).toFixed(1);
-          const isElite = i < (this.params.elitism || 2);
-          const roleHtml = isElite
-            ? `<span class="role-badge role-elite">Élite Invariable (k=${i + 1})</span>`
-            : `<span class="role-badge role-tourn">Candidato Torneo (p=2)</span>`;
-          return `
-            <tr>
-              <td class="mono font-semibold">#${i + 1}</td>
-              <td class="mono font-semibold">${ind.fitness.toFixed(6)}</td>
-              <td class="mono">${(aptitud * 100).toFixed(2)}%</td>
-              <td>${roleHtml}</td>
-              <td>
-                <div class="fitness-bar-cell">
-                  <div class="fitness-bar-mini">
-                    <div class="fitness-bar-mini-fill" style="width:${barPct}%"></div>
-                  </div>
-                  <span class="mono">${barPct}%</span>
-                </div>
-              </td>
-            </tr>`;
-        }).join('');
-      }
+    // Tabla de mejores individuos
+    if (ga.generation === 0) {
+      this._renderTop8Table([]);
+    } else {
+      this._renderTop8Table(ga.getTopK(8).map((ind, i) => ({
+        rank: i + 1,
+        fitness: ind.fitness,
+        aptitud_pct: Math.max(0, 1 - ind.fitness) * 100,
+      })));
     }
   }
 
