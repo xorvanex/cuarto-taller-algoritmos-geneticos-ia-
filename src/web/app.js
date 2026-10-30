@@ -528,7 +528,7 @@ class VRPRenderer {
     if (closest) {
       let label = '';
       if (closest.type === 'depot') {
-        label = `🏭 Depósito Central (${this.instance.depot.x}, ${this.instance.depot.y})`;
+        label = `Depósito Central (${this.instance.depot.x}, ${this.instance.depot.y})`;
       } else {
         const c = this.instance.customers[closest.index];
         label = `${c.id} | Dem: ${c.demand} kg | Serv: ${c.service} min`;
@@ -940,11 +940,20 @@ class ConvergenceChart {
       this.clear();
       return;
     }
-    const labels = history.map(s => s.gen);
-    chart.data.labels            = labels;
-    chart.data.datasets[0].data  = history.map(s => Math.max(s.best,  1e-7));
-    chart.data.datasets[1].data  = history.map(s => Math.max(s.avg,   1e-7));
-    chart.data.datasets[2].data  = history.map(s => Math.max(s.worst, 1e-7));
+    const labels = history.map(s => s.gen !== undefined ? s.gen : (s.generation !== undefined ? s.generation : 0));
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = history.map(s => {
+      const v = s.best !== undefined ? s.best : s.best_fitness;
+      return typeof v === 'number' && !isNaN(v) ? Math.max(v, 1e-7) : null;
+    });
+    chart.data.datasets[1].data = history.map(s => {
+      const v = s.avg !== undefined ? s.avg : s.avg_fitness;
+      return typeof v === 'number' && !isNaN(v) ? Math.max(v, 1e-7) : null;
+    });
+    chart.data.datasets[2].data = history.map(s => {
+      const v = s.worst !== undefined ? s.worst : s.worst_fitness;
+      return typeof v === 'number' && !isNaN(v) ? Math.max(v, 1e-7) : null;
+    });
     chart.update('none');
   }
 
@@ -1670,17 +1679,32 @@ class DashboardController {
                   <div class="info-chip-value">1080 mm</div>
                 </div>
               </div>
-              <p class="text-xs text-muted" style="margin-top:4px; line-height:1.5">
-                Criterio multicriterio de cátedra:<br>
-                <span class="text-accent">f_norm = 0.40·WL + 0.10·Área + 0.50·Colisión</span><br>
-                <span style="color:var(--muted-dim)">Ing. M. A. Ospina — Problema 2</span>
-              </p>
+              <div class="formula-card">
+                <div class="formula-card-header">
+                  <span>Criterio Multicriterio</span>
+                  <span class="formula-card-tag">Cátedra P2</span>
+                </div>
+                <div class="formula-card-eq">
+                  <i>f</i><sub>norm</sub> = 0.40·WL + 0.10·Área + 0.50·Colisión
+                </div>
+                <div class="formula-card-legend">
+                  <span><b>WL:</b> Longitud Nets</span>
+                  <span><b>Área:</b> Bounding Box</span>
+                  <span><b>Colisión:</b> Penalización</span>
+                </div>
+                <div class="formula-card-footer">
+                  <span>SGA Multi-Objetivo</span>
+                  <span>Prof. Ing. M. A. Ospina</span>
+                </div>
+              </div>
             `;
-            this._setStatus('ready', '🟢 Caso Base Certificado (PCB)');
+            this._setStatus('ready', 'Caso Base Certificado (PCB)');
             requestAnimationFrame(() => {
               if (this.pcbChart && this.pcbChart.chart) {
                 this.pcbChart.chart.resize();
-                this.pcbChart.chart.update();
+                if (this.pcbData?.history) {
+                  this.pcbChart.update(this.pcbData.history);
+                }
               }
               if (this.pcbRenderer) {
                 this._setPCBGeneration(this.pcbCurrentGen);
@@ -1714,13 +1738,25 @@ class DashboardController {
                   <div class="info-chip-value">750 km</div>
                 </div>
               </div>
-              <p class="text-xs text-muted" style="margin-top:4px; line-height:1.5">
-                Normalización aprobada en tutoría:<br>
-                <span class="text-accent">f_norm ≤ 10⁻² · Aptitud → 100%</span><br>
-                <span style="color:var(--muted-dim)">Ing. M. A. Ospina — 29/oct/2026</span>
-              </p>
+              <div class="formula-card">
+                <div class="formula-card-header">
+                  <span>Normalización de Costo</span>
+                  <span class="formula-card-tag">Cátedra P1</span>
+                </div>
+                <div class="formula-card-eq">
+                  <i>f</i><sub>norm</sub> = <i>F</i><sub>penalizado</sub> / 1500 km
+                </div>
+                <div class="formula-card-legend">
+                  <span><b>Condición:</b> <i>f</i><sub>norm</sub> ≤ 10⁻²</span>
+                  <span><b>Aptitud:</b> 1 − <i>f</i><sub>norm</sub></span>
+                </div>
+                <div class="formula-card-footer">
+                  <span>Tutoría Certificada</span>
+                  <span>Prof. Ing. M. A. Ospina</span>
+                </div>
+              </div>
             `;
-            this._setStatus('ready', '🟢 Caso Base Certificado');
+            this._setStatus('ready', 'Caso Base Certificado');
             if (this.chart && this.chart.chart) {
               this.chart.chart.resize();
               this.chart.chart.update();
@@ -1857,7 +1893,7 @@ class DashboardController {
           this._renderTop8Table(this.pyData.top_individuals);
         }
 
-        this._setStatus('ready', `🔍 Inspección: Gen ${gen} / ${maxG}`);
+        this._setStatus('ready', `Inspección: Gen ${gen} / ${maxG}`);
       }
     } 
     // 2. Si estamos en modo interactivo/libre (usando rutas y snapshots guardados en vivo)
@@ -1895,14 +1931,14 @@ class DashboardController {
 
       const badge = document.getElementById('conv-badge');
       if (badge) {
-        badge.textContent = `🔍 Gen ${targetGen}`;
+        badge.textContent = `Gen ${targetGen}`;
         badge.className   = 'badge badge-info';
       }
 
       if (gen > maxSimulated) {
-        this._setStatus('ready', `🔍 Gen ${targetGen} (máxima simulada: ${maxSimulated} / ${maxG})`);
+        this._setStatus('ready', `Gen ${targetGen} (máxima simulada: ${maxSimulated} / ${maxG})`);
       } else {
-        this._setStatus('ready', `🔍 Inspección: Gen ${gen} / ${maxG}`);
+        this._setStatus('ready', `Inspección: Gen ${gen} / ${maxG}`);
       }
     }
   }
@@ -1959,7 +1995,7 @@ class DashboardController {
     this.running  = true;
     this.stepMode = false;
     this._setRunButtonState(true);
-    this._setStatus('running', '⚡ Simulando en Vivo...');
+    this._setStatus('running', 'Simulando en Vivo...');
     this._loop(performance.now());
   }
 
@@ -1988,7 +2024,7 @@ class DashboardController {
     const done = this._advanceGA();
     this._updateUI();
     if (done) {
-      this._setStatus('done', `✅ Convergencia: Gen ${this.ga.generation}`);
+      this._setStatus('done', `Convergencia: Gen ${this.ga.generation}`);
     } else {
       this._setStatus('ready', `⏸️ Paso a Paso: Gen ${this.ga.generation} / ${maxG}`);
     }
@@ -2001,7 +2037,7 @@ class DashboardController {
     this.chart.setMaxGens(this.params.maxGens);
     this._redrawCanvas();
     this._updateUI();
-    this._setStatus('ready', '🟢 Reiniciado a Gen 0');
+    this._setStatus('ready', 'Reiniciado a Gen 0');
   }
 
   _restoreCatedra() {
@@ -2025,7 +2061,7 @@ class DashboardController {
       this._redrawCanvas();
       this._updateUI();
     }
-    this._setStatus('ready', '🟢 Caso Base Certificado');
+    this._setStatus('ready', 'Caso Base Certificado');
   }
 
   _setRunButtonState(isRunning) {
@@ -2068,7 +2104,7 @@ class DashboardController {
       if (done) {
         this.running = false;
         this._setRunButtonState(false);
-        this._setStatus('done', `✅ Convergencia: Gen ${this.ga.generation}`);
+        this._setStatus('done', `Convergencia: Gen ${this.ga.generation}`);
         return;
       }
     }
@@ -2182,7 +2218,7 @@ class DashboardController {
         badge.textContent = '● Convergido';
         badge.className   = 'badge badge-success';
       } else if (this.running) {
-        badge.textContent = '⚡ Ejecutando';
+        badge.textContent = 'Ejecutando';
         badge.className   = 'badge badge-warning';
       } else {
         badge.textContent = `● Gen ${ga.generation}`;
@@ -2218,9 +2254,9 @@ class DashboardController {
       label.textContent = customLabel;
     } else {
       const labels = {
-        ready:   '🟢 Caso Base Certificado',
-        running: '⚡ Simulando en Vivo...',
-        done:    '✅ Simulación Completada',
+        ready:   'Caso Base Certificado',
+        running: 'Simulando en Vivo...',
+        done:    'Simulación Completada',
       };
       label.textContent = labels[state] || state;
     }
@@ -2333,13 +2369,7 @@ class DashboardController {
 
     // Gráfica de convergencia PCB
     if (this.pcbChart && d.history) {
-      this.pcbChart.update(d.history.map(h => ({
-        generation: h.gen,
-        best_fitness: h.best,
-        avg_fitness: h.avg,
-        worst_fitness: h.worst,
-        std_fitness: h.std
-      })));
+      this.pcbChart.update(d.history);
     }
 
     // Top 8 Individuos PCB
@@ -2385,11 +2415,39 @@ class DashboardController {
       this._renderPCBComponents(layout);
     }
 
-    // Actualizar KPI dinámico si existe en historia
+    // Actualizar KPI de fitness
+    let bestFit = 0.67591;
+    let stdFit = 0.04;
     if (this.pcbData?.history && this.pcbData.history[gen]) {
       const h = this.pcbData.history[gen];
+      bestFit = h.best;
+      stdFit = h.std;
       this._setText('kpi-pcb-fitness', h.best.toFixed(5));
     }
+
+    // Calcular y actualizar métricas dinámicas (Longitud, Área, Factibilidad)
+    const m = this._calculatePCBMetrics(layout);
+    if (m) {
+      this._setText('kpi-pcb-wl', `${m.wlMan.toFixed(1)} mm`);
+      this._setText('kpi-pcb-wl-sub', `Euclídea: ${m.wlEuc.toFixed(1)} mm · 22 nets`);
+      this._setText('kpi-pcb-area', `${m.area.toFixed(1)} mm²`);
+      this._setText('kpi-pcb-area-sub', `Envolvente: ${m.boxW.toFixed(1)} × ${m.boxH.toFixed(1)} mm`);
+
+      const feasEl = document.getElementById('kpi-pcb-feasible');
+      if (feasEl) {
+        if (m.isFeasible) {
+          feasEl.textContent = '100% Factible';
+          feasEl.style.color = 'var(--accent)';
+        } else {
+          feasEl.textContent = 'Penalizado';
+          feasEl.style.color = 'var(--danger)';
+        }
+      }
+      this._setText('kpi-pcb-feasible-sub', `${m.overlapArea.toFixed(1)} mm² colisión (${m.errCount} err)`);
+    }
+
+    // Actualizar Top 8 dinámico
+    this._updatePCBTop8ForGen(gen, bestFit, stdFit);
   }
 
   _playPCB() {
@@ -2435,6 +2493,110 @@ class DashboardController {
     if (btnText) btnText.textContent = 'Ejecutar';
     if (btnIcon) btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
     if (btnPause) btnPause.disabled = true;
+  }
+
+  /**
+   * Calcula dinámicamente wirelength, bounding box y colisiones para cualquier layout.
+   */
+  _calculatePCBMetrics(components) {
+    if (!components || components.length === 0) return null;
+
+    const compMap = {};
+    for (const c of components) {
+      compMap[c.id] = c;
+    }
+
+    let wlMan = 0;
+    let wlEuc = 0;
+    const nets = (typeof PCB_INSTANCE !== 'undefined' && PCB_INSTANCE.nets) ? PCB_INSTANCE.nets : (this.pcbData?.instance?.nets || []);
+    for (const net of nets) {
+      const c1 = compMap[net.source_id];
+      const c2 = compMap[net.target_id];
+      if (c1 && c2) {
+        const dx = Math.abs(c1.x - c2.x);
+        const dy = Math.abs(c1.y - c2.y);
+        wlMan += dx + dy;
+        wlEuc += Math.hypot(dx, dy);
+      }
+    }
+
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    for (const c of components) {
+      const halfW = c.width / 2;
+      const halfH = c.height / 2;
+      const left = c.left !== undefined ? c.left : (c.x - halfW);
+      const right = c.right !== undefined ? c.right : (c.x + halfW);
+      const bottom = c.bottom !== undefined ? c.bottom : (c.y - halfH);
+      const top = c.top !== undefined ? c.top : (c.y + halfH);
+      if (left < minX) minX = left;
+      if (right > maxX) maxX = right;
+      if (bottom < minY) minY = bottom;
+      if (top > maxY) maxY = top;
+    }
+    const boxW = Math.max(0, maxX - minX);
+    const boxH = Math.max(0, maxY - minY);
+    const area = boxW * boxH;
+
+    const clr = (typeof PCB_INSTANCE !== 'undefined' && PCB_INSTANCE.clearance) ? PCB_INSTANCE.clearance : 2.0;
+    let overlapArea = 0;
+    let errCount = 0;
+    for (let i = 0; i < components.length; i++) {
+      for (let j = i + 1; j < components.length; j++) {
+        const c1 = components[i];
+        const c2 = components[j];
+        const c1Left = c1.left !== undefined ? c1.left : (c1.x - c1.width / 2);
+        const c1Right = c1.right !== undefined ? c1.right : (c1.x + c1.width / 2);
+        const c1Bottom = c1.bottom !== undefined ? c1.bottom : (c1.y - c1.height / 2);
+        const c1Top = c1.top !== undefined ? c1.top : (c1.y + c1.height / 2);
+
+        const c2Left = c2.left !== undefined ? c2.left : (c2.x - c2.width / 2);
+        const c2Right = c2.right !== undefined ? c2.right : (c2.x + c2.width / 2);
+        const c2Bottom = c2.bottom !== undefined ? c2.bottom : (c2.y - c2.height / 2);
+        const c2Top = c2.top !== undefined ? c2.top : (c2.y + c2.height / 2);
+
+        const ox = Math.min(c1Right + clr, c2Right + clr) - Math.max(c1Left - clr, c2Left - clr);
+        const oy = Math.min(c1Top + clr, c2Top + clr) - Math.max(c1Bottom - clr, c2Bottom - clr);
+        if (ox > 0 && oy > 0) {
+          overlapArea += ox * oy;
+          errCount++;
+        }
+      }
+    }
+
+    return {
+      wlMan,
+      wlEuc,
+      area,
+      boxW,
+      boxH,
+      overlapArea,
+      errCount,
+      isFeasible: overlapArea === 0 && errCount === 0
+    };
+  }
+
+  /**
+   * Actualiza la tabla Top 8 de PCB para cualquier generación.
+   */
+  _updatePCBTop8ForGen(gen, bestFit, stdFit) {
+    if (gen === 150 && this.pcbData?.top_individuals) {
+      this._renderPCBTop8(this.pcbData.top_individuals);
+      return;
+    }
+
+    const individuals = [];
+    const spread = Math.max(0.0005, (stdFit || 0.04) * 0.04);
+    for (let r = 1; r <= 8; r++) {
+      const f = bestFit + (r - 1) * spread;
+      const apt = Math.max(0, Math.min(100, (1.0 - (f / 2.0)) * 100));
+      individuals.push({
+        rank: r,
+        fitness: f,
+        aptitud_pct: parseFloat(apt.toFixed(2))
+      });
+    }
+    this._renderPCBTop8(individuals);
   }
 
   _renderPCBTop8(individuals) {

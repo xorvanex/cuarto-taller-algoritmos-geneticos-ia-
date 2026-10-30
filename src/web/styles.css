@@ -1456,3 +1456,85 @@ tbody td:first-child {
   justify-content: center;
   gap: var(--sp-3);
 }
+
+
+/* ── Mathematical Expression Styling ── */
+.math-expr {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  color: var(--accent);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  padding: 1px 7px;
+  border-radius: 4px;
+  display: inline-block;
+  vertical-align: baseline;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ── Formula Display Card in Sidebar ── */
+.formula-card {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formula-card-header {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.formula-card-tag {
+  font-size: 0.625rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.formula-card-eq {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  padding: 8px 10px;
+  background: rgba(11, 15, 25, 0.65);
+  border-radius: var(--r-sm);
+  border-left: 3px solid var(--accent);
+  line-height: 1.4;
+}
+
+.formula-card-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+.formula-card-legend span b {
+  color: var(--text-bright);
+}
+
+.formula-card-footer {
+  font-size: 0.625rem;
+  color: var(--muted-dim);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 6px;
+  display: flex;
+  justify-content: space-between;
+}

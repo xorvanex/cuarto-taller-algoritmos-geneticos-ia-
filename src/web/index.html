@@ -104,7 +104,7 @@
     <div class="topbar-meta">
       <div class="status-pill" id="status-pill" role="status" aria-live="polite">
         <div class="status-dot ready" id="status-dot"></div>
-        <span id="status-label">🟢 Caso Base Certificado</span>
+        <span id="status-label">Caso Base Certificado</span>
       </div>
     </div>
   </header>
@@ -120,7 +120,7 @@
       <!-- Acordeón 1: Modo de Simulación -->
       <div class="sidebar-section">
         <button class="sidebar-accordion-header" type="button" data-accordion="mode">
-          <span>🔘 Modo de Simulación</span>
+          <span>Modo de Simulación</span>
           <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="sidebar-accordion-content" id="acc-mode">
@@ -142,7 +142,7 @@
       <!-- Acordeón 2: Parámetros del SGA -->
       <div class="sidebar-section">
         <button class="sidebar-accordion-header" type="button" data-accordion="params">
-          <span>⚙️ Parámetros SGA</span>
+          <span>Parámetros SGA</span>
           <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="sidebar-accordion-content" id="acc-params">
@@ -204,7 +204,7 @@
       <!-- Acordeón 3: Control de Velocidad -->
       <div class="sidebar-section">
         <button class="sidebar-accordion-header" type="button" data-accordion="speed">
-          <span>⚡ Velocidad de Animación</span>
+          <span>Velocidad de Animación</span>
           <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="sidebar-accordion-content" id="acc-speed">
@@ -218,7 +218,7 @@
       <!-- Acordeón 4: Caso Base & Cátedra -->
       <div class="sidebar-section">
         <button class="sidebar-accordion-header" type="button" data-accordion="base">
-          <span>📋 Caso Base & Cátedra</span>
+          <span>Caso Base & Cátedra</span>
           <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="sidebar-accordion-content" id="acc-base">
@@ -248,11 +248,23 @@
               <div class="info-chip-value">750 km</div>
             </div>
           </div>
-          <p class="text-xs text-muted" style="margin-top:4px; line-height:1.5">
-            Normalización aprobada en tutoría:<br>
-            <span class="text-accent">f_norm ≤ 10⁻² · Aptitud → 100%</span><br>
-            <span style="color:var(--muted-dim)">Ing. M. A. Ospina — 29/oct/2026</span>
-          </p>
+          <div class="formula-card">
+            <div class="formula-card-header">
+              <span>Normalización de Costo</span>
+              <span class="formula-card-tag">Cátedra P1</span>
+            </div>
+            <div class="formula-card-eq">
+              <i>f</i><sub>norm</sub> = <i>F</i><sub>penalizado</sub> / 1500 km
+            </div>
+            <div class="formula-card-legend">
+              <span><b>Condición:</b> <i>f</i><sub>norm</sub> ≤ 10⁻²</span>
+              <span><b>Aptitud:</b> 1 − <i>f</i><sub>norm</sub></span>
+            </div>
+            <div class="formula-card-footer">
+              <span>Tutoría Certificada</span>
+              <span>Prof. Ing. M. A. Ospina</span>
+            </div>
+          </div>
         </div>
       </div>
 
