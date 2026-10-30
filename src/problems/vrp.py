@@ -6,7 +6,7 @@ Modelado matemático, decodificación cromosómica, función de aptitud normaliz
 con penalizaciones cuadráticas y generador de gráficos en alta resolución (300 DPI)
 para el problema de ruteo de vehículos con capacidad y tiempo limitado (CVRPTW).
 
-Autor: Dago David Palmera Navarro & Julián David Camargo Padilla
+Autor: Dago David Palmera Navarro
 Cátedra: Inteligencia Artificial - Docente: Ing. Manuel Alejandro Ospina Alarcón
 """
 

@@ -5,7 +5,7 @@
 
 **Inteligencia Artificial — Tercer Corte**
 **Docente:** Ing. Manuel Alejandro Ospina Alarcón
-**Autores:** Dago David Palmera Navarro (Cód. 0222321003) & Julián David Camargo Padilla (Cód. 0222320016)
+**Autor:** Dago David Palmera Navarro (Cód. 0222321003)
 **Universidad de Cartagena — Facultad de Ingeniería — Ingeniería de Sistemas**
 **Cartagena de Indias, Noviembre de 2026**
 

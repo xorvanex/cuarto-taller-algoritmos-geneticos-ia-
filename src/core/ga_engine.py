@@ -13,7 +13,7 @@ Operadores implementados:
   - Mutación puntual con reemplazo de alelo (Mutacion.m)
   - Parada por umbral de fitness < 10^-2 o máximo de generaciones
 
-Autor: Dago David Palmera Navarro & Julián David Camargo Padilla
+Autor: Dago David Palmera Navarro
 Cátedra: Inteligencia Artificial - Docente: Ing. Manuel Alejandro Ospina Alarcón
 """
 

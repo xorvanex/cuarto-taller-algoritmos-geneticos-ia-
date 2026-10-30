@@ -7,7 +7,7 @@ Inteligencia Artificial - Semestre VII
 Universidad de Cartagena - Facultad de Ingeniería - Ingeniería de Sistemas
 
 Docente: Ing. Manuel Alejandro Ospina Alarcón
-Autores: Dago David Palmera Navarro & Julián David Camargo Padilla
+Autor: Dago David Palmera Navarro
 
 Arquitectura Modular:
   - Python ('src/'): Ejecuta los modelos matemáticos, decodificación, operadores y estadísticas.
@@ -50,7 +50,7 @@ def print_banner() -> None:
     print("   UNIVERSIDAD DE CARTAGENA - FACULTAD DE INGENIERÍA")
     print("   PROGRAMA DE INGENIERÍA DE SISTEMAS - INTELIGENCIA ARTIFICIAL (CORTE 3)")
     print("   CUARTO TALLER: ALGORITMOS GENÉTICOS - SUITE DE OPTIMIZACIÓN MULTI-PROBLEMA")
-    print("   Autores: Dago David Palmera Navarro & Julián David Camargo Padilla")
+    print("   Autor: Dago David Palmera Navarro")
     print("=" * 86)
 
 

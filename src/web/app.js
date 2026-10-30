@@ -13,7 +13,7 @@
  *   • 15 clientes, 3 camiones, capacidad 120 kg
  *   • D_ideal = 235 km, D_worst = 750 km
  *
- * Autores: Palmera Navarro D.D. · Camargo Padilla J.D.
+ * Autor: Dago David Palmera Navarro (Cód. 0222321003)
  * Materia: Inteligencia Artificial — Corte 3, 2026
  * Docente: Ing. Manuel Alejandro Ospina Alarcón
  */
