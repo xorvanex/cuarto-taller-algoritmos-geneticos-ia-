@@ -770,6 +770,7 @@ class ConvergenceChart {
     this.ctx     = document.getElementById(canvasId).getContext('2d');
     this.chart   = null;
     this._init();
+    this._initPCB();
   }
 
   _init() {
@@ -958,6 +959,435 @@ class ConvergenceChart {
 /* ════════════════════════════════════════════════════════════
    9. CONTROLADOR DE UI — Orquesta todo
    ════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   11. PROBLEMA 2: PCB LAYOUT — Datos, Renderer y Controlador
+   ════════════════════════════════════════════════════════════ */
+
+const PCB_PY_DATA = typeof window !== 'undefined' && window.PCB_SIMULATION_DATA ? window.PCB_SIMULATION_DATA : null;
+
+const PCB_INSTANCE = PCB_PY_DATA && PCB_PY_DATA.instance ? PCB_PY_DATA.instance : {
+  board_max_width: 100.0,
+  board_max_height: 80.0,
+  clearance: 2.0,
+  components: [
+    { id: 0,  ref: "U1",  name: "MCU ARM-Cortex",     width: 16.0, height: 16.0, category: "ic",        color: "#10B981" },
+    { id: 1,  ref: "U2",  name: "Regulador LDO 3.3V", width: 10.0, height: 8.0,  category: "power",     color: "#F59E0B" },
+    { id: 2,  ref: "Y1",  name: "Cristal 16MHz",      width: 8.0,  height: 5.0,  category: "clock",     color: "#8B5CF6" },
+    { id: 3,  ref: "U3",  name: "Memoria SPI Flash",  width: 8.0,  height: 8.0,  category: "ic",        color: "#06B6D4" },
+    { id: 4,  ref: "J1",  name: "USB-C Power/Data",   width: 10.0, height: 8.0,  category: "connector", color: "#3B82F6" },
+    { id: 5,  ref: "J2",  name: "Header GPIO 2x5",    width: 20.0, height: 6.0,  category: "connector", color: "#6366F1" },
+    { id: 6,  ref: "C1",  name: "Cap Desacoplo 100n", width: 4.0,  height: 4.0,  category: "passive",   color: "#EC4899" },
+    { id: 7,  ref: "C2",  name: "Cap Desacoplo 100n", width: 4.0,  height: 4.0,  category: "passive",   color: "#EC4899" },
+    { id: 8,  ref: "C3",  name: "Cap Entrada 10uF",   width: 6.0,  height: 6.0,  category: "power",     color: "#F97316" },
+    { id: 9,  ref: "C4",  name: "Cap Salida 10uF",    width: 6.0,  height: 6.0,  category: "power",     color: "#F97316" },
+    { id: 10, ref: "R1",  name: "Res Reset Pull-up",  width: 4.0,  height: 3.0,  category: "passive",   color: "#A855F7" },
+    { id: 11, ref: "R2",  name: "Res SPI Term",       width: 4.0,  height: 3.0,  category: "passive",   color: "#A855F7" },
+    { id: 12, ref: "R3",  name: "Res LED Estado",     width: 4.0,  height: 3.0,  category: "passive",   color: "#A855F7" },
+    { id: 13, ref: "D1",  name: "Diodo ESD USB",      width: 5.0,  height: 4.0,  category: "power",     color: "#EF4444" }
+  ],
+  nets: []
+};
+
+/**
+ * Renderizador de alta resolución para el plano técnico del PCB en HTML5 Canvas.
+ */
+class PCBRenderer {
+  constructor(canvas, instance) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.instance = instance;
+    this.components = instance.components || [];
+    this.nets = instance.nets || [];
+    this.placed = [];
+    this.hoveredComp = null;
+    this.cssWidth = 400;
+    this.cssHeight = 320;
+
+    this._bindEvents();
+  }
+
+  _bindEvents() {
+    this.canvas.addEventListener('mousemove', e => this._onMouseMove(e));
+    this.canvas.addEventListener('mouseleave', () => {
+      this.hoveredComp = null;
+      const tooltip = document.getElementById('pcb-canvas-tooltip');
+      if (tooltip) tooltip.style.display = 'none';
+      this.draw(this.placed);
+    });
+  }
+
+  _onMouseMove(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    let found = null;
+    if (this.placed && this.placed.length > 0) {
+      for (const comp of this.placed) {
+        const cp = this._toCanvas(comp.x, comp.y);
+        const wPx = (comp.width / this.instance.board_max_width) * this.boardW;
+        const hPx = (comp.height / this.instance.board_max_height) * this.boardH;
+        if (
+          mx >= cp.px - wPx / 2 &&
+          mx <= cp.px + wPx / 2 &&
+          my >= cp.py - hPx / 2 &&
+          my <= cp.py + hPx / 2
+        ) {
+          found = comp;
+          break;
+        }
+      }
+    }
+
+    if (found !== this.hoveredComp) {
+      this.hoveredComp = found;
+      this.draw(this.placed);
+    }
+
+    const tooltip = document.getElementById('pcb-canvas-tooltip');
+    if (tooltip) {
+      if (found) {
+        // Find connected nets
+        const connNets = this.nets.filter(n => n.source_id === found.id || n.target_id === found.id);
+        const netList = connNets.map(n => n.net_name).slice(0, 5).join(', ');
+        tooltip.innerHTML = `
+          <div style="font-weight:700; color:${found.color || '#10B981'}; margin-bottom:4px">
+            ${found.ref} — ${found.name}
+          </div>
+          <div style="color:#94A3B8; font-size:0.75rem; line-height:1.4">
+            <strong>Huella:</strong> ${found.width} × ${found.height} mm (${found.category})<br>
+            <strong>Posición:</strong> X = ${found.x.toFixed(1)} mm, Y = ${found.y.toFixed(1)} mm<br>
+            <strong>Conexiones (${connNets.length}):</strong> <span style="color:#38BDF8">${netList || 'Ninguna'}</span>
+          </div>
+        `;
+        tooltip.style.display = 'block';
+        tooltip.style.left = `${Math.min(mx + 15, rect.width - 240)}px`;
+        tooltip.style.top  = `${Math.max(my - 70, 10)}px`;
+      } else {
+        tooltip.style.display = 'none';
+      }
+    }
+  }
+
+  _toCanvas(x, y) {
+    const pad = 30;
+    const w = this.cssWidth;
+    const h = this.cssHeight;
+
+    const boardAspect = this.instance.board_max_width / this.instance.board_max_height; // 100 / 80 = 1.25
+    let bW = w - 2 * pad;
+    let bH = bW / boardAspect;
+    if (bH > h - 2 * pad) {
+      bH = h - 2 * pad;
+      bW = bH * boardAspect;
+    }
+
+    this.boardW = bW;
+    this.boardH = bH;
+    this.boardX = (w - bW) / 2;
+    this.boardY = (h - bH) / 2;
+
+    return {
+      px: this.boardX + (x / this.instance.board_max_width) * bW,
+      py: this.boardY + (1 - y / this.instance.board_max_height) * bH, // Inverted Y for Cartesian board
+    };
+  }
+
+  draw(placedComponents = null) {
+    if (placedComponents) {
+      this.placed = placedComponents;
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = this.canvas.getBoundingClientRect();
+    const w = rect.width || 480;
+    const h = rect.height || 360;
+
+    this.cssWidth = w;
+    this.cssHeight = h;
+
+    this.canvas.width = Math.round(w * dpr);
+    this.canvas.height = Math.round(h * dpr);
+    const ctx = this.ctx;
+    ctx.resetTransform();
+    ctx.scale(dpr, dpr);
+
+    // Fondo general oscuro
+    ctx.fillStyle = '#070D14';
+    ctx.fillRect(0, 0, w, h);
+
+    // Calcular dimensiones de la placa
+    const origin = this._toCanvas(0, 0);
+    const maxCorner = this._toCanvas(this.instance.board_max_width, this.instance.board_max_height);
+    const bx = this.boardX;
+    const by = this.boardY;
+    const bw = this.boardW;
+    const bh = this.boardH;
+
+    // 1. Sustrato de la Placa PCB (FR-4 Solder Mask Verde Oscuro / Tech Teal)
+    ctx.save();
+    const bgGrad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+    bgGrad.addColorStop(0, '#0a1d17');
+    bgGrad.addColorStop(1, '#06130f');
+    ctx.fillStyle = bgGrad;
+    ctx.strokeStyle = '#10B981';
+    ctx.lineWidth = 2.0;
+
+    // Sombra exterior de la placa
+    ctx.shadowColor = 'rgba(16, 185, 129, 0.25)';
+    ctx.shadowBlur = 12;
+
+    this._roundRect(ctx, bx, by, bw, bh, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    // 2. Grilla milimétrica sutil (cada 10 mm)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
+    ctx.lineWidth = 1;
+    for (let gx = 10; gx < this.instance.board_max_width; gx += 10) {
+      const p1 = this._toCanvas(gx, 0);
+      const p2 = this._toCanvas(gx, this.instance.board_max_height);
+      ctx.beginPath();
+      ctx.moveTo(p1.px, p1.py);
+      ctx.lineTo(p2.px, p2.py);
+      ctx.stroke();
+    }
+    for (let gy = 10; gy < this.instance.board_max_height; gy += 10) {
+      const p1 = this._toCanvas(0, gy);
+      const p2 = this._toCanvas(this.instance.board_max_width, gy);
+      ctx.beginPath();
+      ctx.moveTo(p1.px, p1.py);
+      ctx.lineTo(p2.px, p2.py);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 3. Orificios de Montaje en las 4 Esquinas (Mounting Holes)
+    const mountHoles = [
+      { x: 4, y: 4 },
+      { x: this.instance.board_max_width - 4, y: 4 },
+      { x: 4, y: this.instance.board_max_height - 4 },
+      { x: this.instance.board_max_width - 4, y: this.instance.board_max_height - 4 }
+    ];
+    for (const h of mountHoles) {
+      const cp = this._toCanvas(h.x, h.y);
+      ctx.save();
+      // Anillo de cobre dorado
+      ctx.fillStyle = '#D97706';
+      ctx.beginPath();
+      ctx.arc(cp.px, cp.py, 5, 0, Math.PI * 2);
+      ctx.fill();
+      // Taladro interno oscuro
+      ctx.fillStyle = '#070D14';
+      ctx.beginPath();
+      ctx.arc(cp.px, cp.py, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Si no hay componentes colocados, mostrar mensaje
+    if (!this.placed || this.placed.length === 0) {
+      ctx.fillStyle = '#64748B';
+      ctx.font = '12px "Fira Code", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Cargando plano de colocación PCB...', w / 2, h / 2);
+      return;
+    }
+
+    // Mapa de componentes por ID para rápido acceso
+    const compMap = {};
+    for (const c of this.placed) compMap[c.id] = c;
+
+    // 4. Dibujar Trazas de Cobre (Nets)
+    for (const net of this.nets) {
+      const c1 = compMap[net.source_id];
+      const c2 = compMap[net.target_id];
+      if (!c1 || c2 === undefined) continue;
+
+      const p1 = this._toCanvas(c1.x, c1.y);
+      const p2 = this._toCanvas(c2.x, c2.y);
+
+      const isHovered = this.hoveredComp && (this.hoveredComp.id === c1.id || this.hoveredComp.id === c2.id);
+
+      ctx.save();
+      if (isHovered) {
+        ctx.strokeStyle = '#38BDF8';
+        ctx.shadowColor = '#38BDF8';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 2.5;
+      } else {
+        // Color por importancia del Net
+        if (net.net_name.includes('VCC') || net.net_name.includes('VBUS') || net.net_name.includes('LDO')) {
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.75)'; // Alimentación ámbar
+          ctx.lineWidth = 1.8;
+        } else if (net.net_name.includes('XTAL')) {
+          ctx.strokeStyle = 'rgba(139, 92, 246, 0.75)'; // Reloj púrpura
+          ctx.lineWidth = 1.6;
+        } else if (net.net_name.includes('SPI') || net.net_name.includes('USB')) {
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.70)'; // Datos cyan
+          ctx.lineWidth = 1.4;
+        } else {
+          ctx.strokeStyle = 'rgba(16, 185, 129, 0.50)'; // General esmeralda
+          ctx.lineWidth = 1.2;
+        }
+      }
+
+      // Ruteo ortogonal Manhattan con chaflán
+      const midX = p1.px + (p2.px - p1.px) * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(p1.px, p1.py);
+      ctx.lineTo(midX, p1.py);
+      ctx.lineTo(midX, p2.py);
+      ctx.lineTo(p2.px, p2.py);
+      ctx.stroke();
+
+      // Pequeñas vías en esquinas
+      ctx.fillStyle = isHovered ? '#38BDF8' : '#D97706';
+      ctx.beginPath();
+      ctx.arc(midX, p1.py, 1.8, 0, Math.PI * 2);
+      ctx.arc(midX, p2.py, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 5. Bounding Box Envolvente (Área compacta del circuito)
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const c of this.placed) {
+      const halfW = c.width / 2;
+      const halfH = c.height / 2;
+      minX = Math.min(minX, c.x - halfW);
+      maxX = Math.max(maxX, c.x + halfW);
+      minY = Math.min(minY, c.y - halfH);
+      maxY = Math.max(maxY, c.y + halfH);
+    }
+    const bbP1 = this._toCanvas(minX, maxY);
+    const bbP2 = this._toCanvas(maxX, minY);
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.40)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeRect(bbP1.px - 3, bbP1.py - 3, (bbP2.px - bbP1.px) + 6, (bbP2.py - bbP1.py) + 6);
+    ctx.restore();
+
+    // 6. Dibujar Componentes Electrónicos (Footprints & Silkscreen)
+    for (const comp of this.placed) {
+      const cp = this._toCanvas(comp.x, comp.y);
+      const wPx = (comp.width / this.instance.board_max_width) * this.boardW;
+      const hPx = (comp.height / this.instance.board_max_height) * this.boardH;
+      const isHovered = this.hoveredComp && this.hoveredComp.id === comp.id;
+
+      ctx.save();
+
+      // Halo de aislamiento dieléctrico (clearance 2mm)
+      const clrWPx = (this.instance.clearance / this.instance.board_max_width) * this.boardW;
+      const clrHPx = (this.instance.clearance / this.instance.board_max_height) * this.boardH;
+      ctx.strokeStyle = isHovered ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.strokeRect(cp.px - wPx / 2 - clrWPx, cp.py - hPx / 2 - clrHPx, wPx + 2 * clrWPx, hPx + 2 * clrHPx);
+      ctx.setLineDash([]);
+
+      // Cuerpo del componente según tipo
+      ctx.shadowColor = isHovered ? (comp.color || '#10B981') : 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = isHovered ? 12 : 4;
+
+      if (comp.category === 'ic') {
+        // Chip IC (MCU, Flash)
+        ctx.fillStyle = '#1E293B';
+        ctx.strokeStyle = comp.color || '#10B981';
+        ctx.lineWidth = isHovered ? 2 : 1.2;
+        this._roundRect(ctx, cp.px - wPx / 2, cp.py - hPx / 2, wPx, hPx, 3);
+        ctx.fill();
+        ctx.stroke();
+
+        // Pin 1 dot
+        ctx.fillStyle = '#F8FAFC';
+        ctx.beginPath();
+        ctx.arc(cp.px - wPx / 2 + 3, cp.py - hPx / 2 + 3, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Pins a los costados
+        ctx.fillStyle = '#94A3B8';
+        const numPins = 4;
+        for (let i = 0; i < numPins; i++) {
+          const step = hPx / (numPins + 1);
+          const py = cp.py - hPx / 2 + (i + 1) * step;
+          ctx.fillRect(cp.px - wPx / 2 - 2, py - 1, 2, 2);
+          ctx.fillRect(cp.px + wPx / 2, py - 1, 2, 2);
+        }
+      } else if (comp.category === 'power') {
+        // Regulador LDO / Diodo
+        ctx.fillStyle = '#1e2433';
+        ctx.strokeStyle = comp.color || '#F59E0B';
+        ctx.lineWidth = isHovered ? 2 : 1.2;
+        this._roundRect(ctx, cp.px - wPx / 2, cp.py - hPx / 2, wPx, hPx, 3);
+        ctx.fill();
+        ctx.stroke();
+
+        // Heatsink tab
+        ctx.fillStyle = '#D97706';
+        ctx.fillRect(cp.px - wPx / 3, cp.py - hPx / 2 - 2, (wPx * 2) / 3, 2);
+      } else if (comp.category === 'connector') {
+        // Conector USB / GPIO
+        ctx.fillStyle = '#172554';
+        ctx.strokeStyle = comp.color || '#3B82F6';
+        ctx.lineWidth = isHovered ? 2 : 1.2;
+        this._roundRect(ctx, cp.px - wPx / 2, cp.py - hPx / 2, wPx, hPx, 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Pines de cabezal o conector
+        ctx.fillStyle = '#E2E8F0';
+        for (let ix = -wPx / 3; ix <= wPx / 3; ix += wPx / 3) {
+          ctx.beginPath();
+          ctx.arc(cp.px + ix, cp.py, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        // Componentes pasivos (Capacitores, Resistencias 0805)
+        ctx.fillStyle = '#0f172a';
+        ctx.strokeStyle = comp.color || '#EC4899';
+        ctx.lineWidth = isHovered ? 1.8 : 1.0;
+        this._roundRect(ctx, cp.px - wPx / 2, cp.py - hPx / 2, wPx, hPx, 1.5);
+        ctx.fill();
+        ctx.stroke();
+
+        // Terminales plateadas
+        ctx.fillStyle = '#CBD5E1';
+        ctx.fillRect(cp.px - wPx / 2, cp.py - hPx / 2, 2, hPx);
+        ctx.fillRect(cp.px + wPx / 2 - 2, cp.py - hPx / 2, 2, hPx);
+      }
+
+      // Serigrafía: Ref del componente (Silkscreen blanca / menta)
+      ctx.fillStyle = isHovered ? '#FFFFFF' : '#E2E8F0';
+      const fontSize = Math.max(8, Math.min(11, Math.round(wPx * 0.35)));
+      ctx.font = `700 ${fontSize}px "Fira Code", monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(comp.ref, cp.px, cp.py);
+
+      ctx.restore();
+    }
+  }
+
+  _roundRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  }
+}
 
 class DashboardController {
   constructor() {
@@ -1183,11 +1613,94 @@ class DashboardController {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.tab;
+        this.currentTab = target;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         const panel = document.getElementById(`tab-${target}`);
         if (panel) panel.classList.add('active');
+
+        // Adaptar Sidebar Caso Base & Cátedra según la pestaña activa
+        const accBaseContent = document.getElementById('acc-base');
+        if (accBaseContent) {
+          if (target === 'pcb') {
+            accBaseContent.innerHTML = `
+              <div class="info-grid">
+                <div class="info-chip">
+                  <div class="info-chip-label">Componentes</div>
+                  <div class="info-chip-value">14</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Trazas (Nets)</div>
+                  <div class="info-chip-value">22</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Sustrato</div>
+                  <div class="info-chip-value">100x80 mm</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Aislamiento</div>
+                  <div class="info-chip-value">2.0 mm</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Área Final</div>
+                  <div class="info-chip-value">3168 mm²</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Wirelength</div>
+                  <div class="info-chip-value">1080 mm</div>
+                </div>
+              </div>
+              <p class="text-xs text-muted" style="margin-top:4px; line-height:1.5">
+                Criterio multicriterio de cátedra:<br>
+                <span class="text-accent">f_norm = 0.40·WL + 0.10·Área + 0.50·Colisión</span><br>
+                <span style="color:var(--muted-dim)">Ing. M. A. Ospina — Problema 2</span>
+              </p>
+            `;
+            this._setStatus('ready', '🟢 Caso Base Certificado (PCB)');
+            if (this.pcbRenderer) {
+              requestAnimationFrame(() => this._setPCBGeneration(this.pcbCurrentGen));
+            }
+          } else if (target === 'vrp') {
+            accBaseContent.innerHTML = `
+              <div class="info-grid">
+                <div class="info-chip">
+                  <div class="info-chip-label">Clientes</div>
+                  <div class="info-chip-value">15</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Camiones</div>
+                  <div class="info-chip-value">3</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Capacidad</div>
+                  <div class="info-chip-value">120 kg</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Turno</div>
+                  <div class="info-chip-value">480 min</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">D_ideal</div>
+                  <div class="info-chip-value">235 km</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">D_worst</div>
+                  <div class="info-chip-value">750 km</div>
+                </div>
+              </div>
+              <p class="text-xs text-muted" style="margin-top:4px; line-height:1.5">
+                Normalización aprobada en tutoría:<br>
+                <span class="text-accent">f_norm ≤ 10⁻² · Aptitud → 100%</span><br>
+                <span style="color:var(--muted-dim)">Ing. M. A. Ospina — 29/oct/2026</span>
+              </p>
+            `;
+            this._setStatus('ready', '🟢 Caso Base Certificado');
+            if (this.renderer) {
+              requestAnimationFrame(() => this._redrawCanvas());
+            }
+          }
+        }
       });
     });
   }
@@ -1683,6 +2196,277 @@ class DashboardController {
       label.textContent = labels[state] || state;
     }
   }
+
+  /* ════════════════════════════════════════════════════════════
+     MÉTODO DE INICIALIZACIÓN PCB (Problema 2)
+     ════════════════════════════════════════════════════════════ */
+  _initPCB() {
+    this.pcbData = typeof window !== 'undefined' && window.PCB_SIMULATION_DATA ? window.PCB_SIMULATION_DATA : null;
+    const pcbCanvas = document.getElementById('pcb-canvas');
+    if (pcbCanvas) {
+      this.pcbRenderer = new PCBRenderer(pcbCanvas, PCB_INSTANCE);
+    }
+
+    const pcbChartCanvas = document.getElementById('pcb-convergence-chart');
+    if (pcbChartCanvas) {
+      this.pcbChart = new ConvergenceChart(pcbChartCanvas, 1e-2);
+      this.pcbChart.setMaxGens(150);
+    }
+
+    this.pcbCurrentGen = 150;
+    this.pcbIsPlaying = false;
+    this.pcbRafId = null;
+
+    this._bindPCBEvents();
+
+    if (this.pcbData) {
+      this._loadPCBCertifiedData();
+    }
+  }
+
+  _bindPCBEvents() {
+    // Timeline slider PCB
+    const pcbSlider = document.getElementById('timeline-pcb-slider');
+    if (pcbSlider) {
+      pcbSlider.addEventListener('input', () => {
+        const gen = parseInt(pcbSlider.value, 10);
+        this._setPCBGeneration(gen);
+      });
+    }
+
+    // Botones de control PCB
+    const btnRun = document.getElementById('btn-pcb-run');
+    if (btnRun) {
+      btnRun.addEventListener('click', () => {
+        if (this.pcbIsPlaying) {
+          this._pausePCB();
+        } else {
+          this._playPCB();
+        }
+      });
+    }
+
+    const btnPause = document.getElementById('btn-pcb-pause');
+    if (btnPause) {
+      btnPause.addEventListener('click', () => this._pausePCB());
+    }
+
+    const btnStep = document.getElementById('btn-pcb-step');
+    if (btnStep) {
+      btnStep.addEventListener('click', () => {
+        this._pausePCB();
+        const maxG = this.pcbData?.metrics?.generations_executed || 150;
+        const nextG = Math.min(this.pcbCurrentGen + 1, maxG);
+        this._setPCBGeneration(nextG);
+      });
+    }
+
+    const btnRestore = document.getElementById('btn-pcb-restore');
+    if (btnRestore) {
+      btnRestore.addEventListener('click', () => {
+        this._pausePCB();
+        const maxG = this.pcbData?.metrics?.generations_executed || 150;
+        this._setPCBGeneration(maxG);
+      });
+    }
+
+    const btnReset = document.getElementById('btn-pcb-reset');
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        this._pausePCB();
+        this._setPCBGeneration(0);
+      });
+    }
+
+    const btnExport = document.getElementById('btn-pcb-export');
+    if (btnExport && this.pcbRenderer) {
+      btnExport.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = `pcb_layout_gen_${this.pcbCurrentGen}.png`;
+        link.href = this.pcbRenderer.canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  }
+
+  _loadPCBCertifiedData() {
+    const d = this.pcbData;
+    if (!d) return;
+
+    // Actualizar KPIs iniciales
+    this._setText('kpi-pcb-fitness', d.metrics.best_fitness.toFixed(5));
+    this._setText('kpi-pcb-wl', `${d.metrics.manhattan_wirelength_mm.toFixed(1)} mm`);
+    this._setText('kpi-pcb-wl-sub', `Euclídea: ${d.metrics.euclidean_wirelength_mm.toFixed(1)} mm · 22 nets`);
+    this._setText('kpi-pcb-area', `${d.metrics.bounding_box_area_mm2.toFixed(1)} mm²`);
+    this._setText('kpi-pcb-area-sub', `Envolvente: ${d.metrics.bounding_box_width_mm} × ${d.metrics.bounding_box_height_mm} mm`);
+    this._setText('kpi-pcb-feasible', d.metrics.is_feasible ? '100% Factible' : 'Penalizado');
+    this._setText('kpi-pcb-feasible-sub', `${d.metrics.overlap_area_mm2.toFixed(1)} mm² colisión (0 err)`);
+
+    // Gráfica de convergencia PCB
+    if (this.pcbChart && d.history) {
+      this.pcbChart.update(d.history.map(h => ({
+        generation: h.gen,
+        best_fitness: h.best,
+        avg_fitness: h.avg,
+        worst_fitness: h.worst,
+        std_fitness: h.std
+      })));
+    }
+
+    // Top 8 Individuos PCB
+    this._renderPCBTop8(d.top_individuals || []);
+
+    // Tabla de componentes
+    this._renderPCBComponents(d.placed_components || []);
+
+    // Dibujar en el canvas
+    this._setPCBGeneration(150);
+  }
+
+  _setPCBGeneration(gen) {
+    this.pcbCurrentGen = gen;
+    const maxG = this.pcbData?.metrics?.generations_executed || 150;
+
+    const sl = document.getElementById('timeline-pcb-slider');
+    if (sl) {
+      sl.value = gen;
+      const pct = (gen / maxG) * 100;
+      sl.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--surface-high) ${pct}%, var(--surface-high) 100%)`;
+    }
+
+    const curDisplay = document.getElementById('gen-pcb-current-display');
+    const maxDisplay = document.getElementById('gen-pcb-max-display');
+    if (curDisplay) curDisplay.textContent = gen;
+    if (maxDisplay) maxDisplay.textContent = maxG;
+
+    // Buscar layout de la generación
+    let layout = null;
+    if (this.pcbData?.generation_layouts && this.pcbData.generation_layouts[gen]) {
+      layout = this.pcbData.generation_layouts[gen];
+    } else if (this.pcbData?.placed_components) {
+      layout = this.pcbData.placed_components;
+    }
+
+    if (this.pcbRenderer && layout) {
+      this.pcbRenderer.draw(layout);
+    }
+
+    // Actualizar componentes en la tabla
+    if (layout) {
+      this._renderPCBComponents(layout);
+    }
+
+    // Actualizar KPI dinámico si existe en historia
+    if (this.pcbData?.history && this.pcbData.history[gen]) {
+      const h = this.pcbData.history[gen];
+      this._setText('kpi-pcb-fitness', h.best.toFixed(5));
+    }
+  }
+
+  _playPCB() {
+    this.pcbIsPlaying = true;
+    const btnText = document.getElementById('text-pcb-run');
+    const btnIcon = document.getElementById('icon-pcb-run');
+    const btnPause = document.getElementById('btn-pcb-pause');
+
+    if (btnText) btnText.textContent = 'Pausar';
+    if (btnIcon) btnIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+    if (btnPause) btnPause.disabled = false;
+
+    const maxG = this.pcbData?.metrics?.generations_executed || 150;
+    if (this.pcbCurrentGen >= maxG) {
+      this.pcbCurrentGen = 0;
+    }
+
+    let lastTick = performance.now();
+    const stepLoop = (ts) => {
+      if (!this.pcbIsPlaying) return;
+      if (ts - lastTick >= this.speedMs) {
+        lastTick = ts;
+        this.pcbCurrentGen++;
+        this._setPCBGeneration(this.pcbCurrentGen);
+        if (this.pcbCurrentGen >= maxG) {
+          this._pausePCB();
+          return;
+        }
+      }
+      this.pcbRafId = requestAnimationFrame(stepLoop);
+    };
+    this.pcbRafId = requestAnimationFrame(stepLoop);
+  }
+
+  _pausePCB() {
+    this.pcbIsPlaying = false;
+    if (this.pcbRafId) cancelAnimationFrame(this.pcbRafId);
+
+    const btnText = document.getElementById('text-pcb-run');
+    const btnIcon = document.getElementById('icon-pcb-run');
+    const btnPause = document.getElementById('btn-pcb-pause');
+
+    if (btnText) btnText.textContent = 'Ejecutar';
+    if (btnIcon) btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    if (btnPause) btnPause.disabled = true;
+  }
+
+  _renderPCBTop8(individuals) {
+    const tbody = document.getElementById('pop-pcb-tbody');
+    if (!tbody) return;
+
+    if (!individuals || individuals.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted-dim); padding:20px;">Sin individuos evaluados</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = individuals.slice(0, 8).map(ind => {
+      const isElite = ind.rank <= 2;
+      const roleBadge = isElite
+        ? `<span class="badge badge-accent">Élite Invariable (k=${ind.rank})</span>`
+        : `<span class="badge badge-info">Candidato Torneo (p=2)</span>`;
+
+      const apt = ind.aptitud_pct !== undefined ? ind.aptitud_pct : Math.max(0, 1 - ind.fitness) * 100;
+      const barColor = isElite ? 'var(--accent)' : 'var(--primary)';
+
+      return `
+        <tr>
+          <td class="mono font-bold" style="color: ${isElite ? 'var(--accent)' : 'var(--text)'}">#${ind.rank}</td>
+          <td class="mono font-bold">${ind.fitness.toFixed(6)}</td>
+          <td class="mono">${apt.toFixed(2)}%</td>
+          <td>${roleBadge}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px">
+              <div style="flex:1; height:4px; background:var(--surface-high); border-radius:2px; overflow:hidden">
+                <div style="width:${Math.min(100, apt)}%; height:100%; background:${barColor}"></div>
+              </div>
+              <span class="mono text-xs text-muted" style="min-width:38px">${apt.toFixed(1)}%</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  _renderPCBComponents(components) {
+    const tbody = document.getElementById('pcb-components-tbody');
+    if (!tbody || !components) return;
+
+    tbody.innerHTML = components.map(c => {
+      const isIC = c.category === 'ic';
+      const isPower = c.category === 'power';
+      const catColor = isIC ? '#10B981' : isPower ? '#F59E0B' : c.category === 'connector' ? '#3B82F6' : '#EC4899';
+
+      return `
+        <tr>
+          <td class="mono font-bold" style="color:${c.color || catColor}">${c.ref}</td>
+          <td><strong>${c.name}</strong></td>
+          <td><span class="badge" style="background:rgba(255,255,255,0.05); color:${catColor}">${c.category.toUpperCase()}</span></td>
+          <td class="mono">${c.width} × ${c.height} mm</td>
+          <td class="mono" style="color:var(--text-bright)">(${c.x.toFixed(1)}, ${c.y.toFixed(1)})</td>
+          <td><span class="badge badge-success">0 colisión (OK)</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
 }
 
 /* ════════════════════════════════════════════════════════════

@@ -76,12 +76,12 @@
         <span class="tab-badge">P1</span>
       </button>
 
-      <button class="tab-btn" data-tab="pcb" role="tab" aria-selected="false" aria-controls="tab-pcb">
+      <button class="tab-btn" data-tab="pcb" role="tab" aria-selected="false" aria-controls="tab-pcb" id="tab-pcb-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>
+          <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 15h3M20 9h3M20 15h3"/>
         </svg>
         <span>PCB — Circuitos</span>
-        <span class="tab-badge soon">P2</span>
+        <span class="tab-badge active">P2</span>
       </button>
 
       <button class="tab-btn" data-tab="markowitz" role="tab" aria-selected="false" aria-controls="tab-markowitz">
@@ -535,15 +535,312 @@
       </section>
 
       <!-- ════════════════════════════════════
-           TAB 2 — PROBLEMA 2: PCB (Placeholder)
+           TAB 2 — PROBLEMA 2: PCB LAYOUT
            ════════════════════════════════════ -->
       <section class="tab-panel" id="tab-pcb" role="tabpanel" aria-labelledby="tab-pcb-btn">
-        <div class="panel-card" style="padding: 40px; text-align: center;">
-          <h2 style="color: var(--accent); margin-bottom: 12px;">Problema 2: Diseño de Circuitos Impresos (PCB)</h2>
-          <p class="text-muted" style="max-width: 600px; margin: 0 auto; line-height: 1.6;">
-            Optimización del ruteo de pistas, minimización de vías y longitud total en placas de circuito impreso mediante Algoritmos Genéticos. Este módulo se activará en la siguiente fase de desarrollo.
-          </p>
+
+        <!-- KPI Bar PCB -->
+        <div class="kpi-bar" aria-label="Indicadores clave del PCB">
+
+          <!-- Mejor Fitness PCB -->
+          <div class="kpi-card kpi-accent">
+            <div class="kpi-top-row">
+              <div class="kpi-label">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+                Mejor Fitness
+              </div>
+              <div class="kpi-info-wrap">
+                <button class="kpi-info-btn" type="button" aria-label="Ver explicación de Mejor Fitness">ⓘ</button>
+                <div class="kpi-tooltip">
+                  <strong>Función de Costo Multicriterio:</strong><br>
+                  f_norm = 0.40·(WL/WL_max) + 0.10·(Área/Área_max) + 0.50·Penalización_solapamiento.<br>
+                  Minimiza simultáneamente la longitud de pistas de cobre y el área del sustrato.
+                </div>
+              </div>
+            </div>
+            <div class="kpi-value mono" id="kpi-pcb-fitness">—</div>
+            <div class="kpi-sub">Fitness normalizado ponderado</div>
+          </div>
+
+          <!-- Longitud de Pistas (Wirelength) -->
+          <div class="kpi-card kpi-primary">
+            <div class="kpi-top-row">
+              <div class="kpi-label">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                Longitud Pistas
+              </div>
+              <div class="kpi-info-wrap">
+                <button class="kpi-info-btn" type="button" aria-label="Ver explicación de Longitud de Pistas">ⓘ</button>
+                <div class="kpi-tooltip">
+                  <strong>Wirelength Manhattan / Euclídeo:</strong><br>
+                  Suma ponderada de las 22 trazas de cobre (nets) que interconectan el microcontrolador ARM, regulador, reloj y periféricos.
+                </div>
+              </div>
+            </div>
+            <div class="kpi-value mono" id="kpi-pcb-wl">—</div>
+            <div class="kpi-sub" id="kpi-pcb-wl-sub">22 nets activas</div>
+          </div>
+
+          <!-- Área del Sustrato PCB -->
+          <div class="kpi-card">
+            <div class="kpi-top-row">
+              <div class="kpi-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                Área Sustrato
+              </div>
+              <div class="kpi-info-wrap">
+                <button class="kpi-info-btn" type="button" aria-label="Ver explicación de Área de Sustrato">ⓘ</button>
+                <div class="kpi-tooltip">
+                  <strong>Envolvente Bounding Box (FR-4):</strong><br>
+                  Área rectangular mínima que contiene los 14 componentes con sus márgenes de aislamiento perimetral.
+                </div>
+              </div>
+            </div>
+            <div class="kpi-value mono" id="kpi-pcb-area">—</div>
+            <div class="kpi-sub" id="kpi-pcb-area-sub">Sustrato 100 x 80 mm</div>
+          </div>
+
+          <!-- Factibilidad & Aislamiento -->
+          <div class="kpi-card">
+            <div class="kpi-top-row">
+              <div class="kpi-label">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                Factibilidad
+              </div>
+              <div class="kpi-info-wrap">
+                <button class="kpi-info-btn" type="button" aria-label="Ver explicación de Factibilidad">ⓘ</button>
+                <div class="kpi-tooltip">
+                  <strong>Cero Colisiones Físicas:</strong><br>
+                  Aislamiento dieléctrico verificado con holgura de 2.0 mm entre componentes (100% Factible sin solapamientos).
+                </div>
+              </div>
+            </div>
+            <div class="kpi-value mono" id="kpi-pcb-feasible" style="color:var(--accent)">100% Factible</div>
+            <div class="kpi-sub" id="kpi-pcb-feasible-sub">0 mm² solapamiento</div>
+          </div>
+
         </div>
+
+        <!-- Split View: Plano Tecnológico + Gráfica de Convergencia -->
+        <div class="grid-2col">
+
+          <!-- Panel: Canvas del PCB -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>
+                </svg>
+                Plano Tecnológico — PCB Layout (Sustrato 100 × 80 mm)
+              </div>
+              <div class="panel-actions">
+                <div class="tooltip-wrap">
+                  <button class="btn-icon" id="btn-pcb-export" title="Exportar plano en alta resolución PNG" aria-label="Exportar PNG">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
+                  <span class="tooltip-text">Exportar PNG</span>
+                </div>
+                <div class="tooltip-wrap">
+                  <button class="btn-icon" id="btn-pcb-reset" title="Reiniciar vista del PCB" aria-label="Reiniciar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                    </svg>
+                  </button>
+                  <span class="tooltip-text">Reiniciar</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-body">
+              <canvas id="pcb-canvas"></canvas>
+              <div id="pcb-canvas-tooltip" role="tooltip"></div>
+            </div>
+
+            <!-- Leyenda tecnológica del PCB -->
+            <div class="route-legend" role="legend" aria-label="Leyenda de componentes y pistas">
+              <div class="legend-item">
+                <div class="legend-dot" style="background:#10B981"></div>
+                <span>U1 MCU ARM</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:#F59E0B"></div>
+                <span>U2 LDO Power</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:#8B5CF6"></div>
+                <span>Y1 XTAL 16M</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:#3B82F6"></div>
+                <span>J1 USB-C / J2 GPIO</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:#EC4899"></div>
+                <span>Pasivos SMD</span>
+              </div>
+              <div class="legend-item" style="margin-left:auto">
+                <div class="legend-dot" style="background:#38BDF8; box-shadow: 0 0 6px #38BDF8"></div>
+                <span>Trazas de Cobre (Nets)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel: Convergencia PCB -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+                Convergencia del SGA (PCB Layout)
+              </div>
+              <div class="panel-actions">
+                <span class="text-xs text-muted mono" style="padding:0 4px">Escala Logarítmica Natural</span>
+              </div>
+            </div>
+            <div class="panel-body" style="padding:12px 14px 8px">
+              <canvas id="pcb-convergence-chart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Control Bar PCB con Timeline Scrubber -->
+        <div class="control-bar" role="toolbar" aria-label="Controles de simulación PCB">
+          <div class="control-actions">
+            <!-- Botón Ejecutar PCB -->
+            <button class="btn-primary" id="btn-pcb-run" aria-label="Ejecutar simulación genética de PCB">
+              <svg id="icon-pcb-run" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>
+              <span id="text-pcb-run">Ejecutar</span>
+            </button>
+
+            <!-- Botón Pausar PCB -->
+            <button class="btn-secondary" id="btn-pcb-pause" disabled aria-label="Pausar simulación PCB">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              Pausar
+            </button>
+
+            <!-- Botón Paso a Paso PCB -->
+            <button class="btn-secondary" id="btn-pcb-step" aria-label="Avanzar una generación en PCB">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg>
+              Paso a Paso
+            </button>
+
+            <!-- Botón Restaurar Caso Base PCB -->
+            <button class="btn-secondary" id="btn-pcb-restore" title="Restaurar parámetros de cátedra PCB" aria-label="Restaurar caso base PCB">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10"/><path d="M12 8v4l3 3"/><path d="M22 12h-4l-2-2"/>
+              </svg>
+              Caso Base
+            </button>
+          </div>
+
+          <!-- Timeline Scrubber Interactivo PCB -->
+          <div class="control-timeline">
+            <div class="timeline-meta">
+              <span class="timeline-title">Línea de Tiempo Evolutiva (PCB):</span>
+              <span class="gen-counter" id="gen-pcb-counter-label-bar" aria-live="polite">
+                Gen <span id="gen-pcb-current-display">150</span> / <span id="gen-pcb-max-display">150</span>
+              </span>
+            </div>
+            <input type="range" id="timeline-pcb-slider" min="0" max="150" value="150" class="timeline-slider" aria-label="Explorar generaciones PCB interactivamente"/>
+          </div>
+        </div>
+
+        <!-- Tabla de Población PCB -->
+        <div class="pop-table-wrap">
+          <div class="pop-table-header">
+            <div>
+              <div class="pop-table-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                Top 8 Mejores Individuos de la Población PCB (Élite k = 2)
+              </div>
+              <div class="pop-table-sub">
+                Cromosomas de empaquetamiento y ruteo de mayor aptitud evaluados en la población (N = 1000)
+              </div>
+            </div>
+            <div class="pop-table-tags">
+              <span class="badge badge-accent" title="Elitismo canónico (Elitismo.m)">Élite k = 2</span>
+              <span class="badge badge-info" title="Torneo asimétrico de cátedra">Torneo Canónico (p = 2)</span>
+            </div>
+          </div>
+
+          <table aria-label="Mejores individuos de la generación actual en PCB">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 10%;">Rango</th>
+                <th scope="col" style="width: 20%;">Fitness (Norm.)</th>
+                <th scope="col" style="width: 20%;">Aptitud Biológica</th>
+                <th scope="col" style="width: 25%;">Rol Evolutivo</th>
+                <th scope="col" style="width: 25%;">Barra de Aptitud</th>
+              </tr>
+            </thead>
+            <tbody id="pop-pcb-tbody">
+              <tr>
+                <td colspan="5" style="text-align:center; color:var(--muted-dim); padding:20px; font-family:var(--font-mono); font-size:0.8rem">
+                  Cargando población de circuitos evaluada...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tabla de Especificación de Componentes del Circuito -->
+        <div class="pop-table-wrap">
+          <div class="pop-table-header">
+            <div>
+              <div class="pop-table-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
+                </svg>
+                Especificación Técnica de Componentes y Coordenadas Finales
+              </div>
+              <div class="pop-table-sub">
+                Dimensiones físicas, footprint, posición en placa (X, Y) y verificación de aislamiento dieléctrico
+              </div>
+            </div>
+            <div class="pop-table-tags">
+              <span class="badge badge-accent">14 Componentes SMD/THT</span>
+              <span class="badge badge-info">22 Redes de Cobre</span>
+            </div>
+          </div>
+
+          <table aria-label="Componentes del circuito impreso">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 10%;">Ref</th>
+                <th scope="col" style="width: 25%;">Componente</th>
+                <th scope="col" style="width: 20%;">Categoría</th>
+                <th scope="col" style="width: 15%;">Tamaño (W × H)</th>
+                <th scope="col" style="width: 15%;">Posición (X, Y)</th>
+                <th scope="col" style="width: 15%;">Estado Físico</th>
+              </tr>
+            </thead>
+            <tbody id="pcb-components-tbody">
+              <tr>
+                <td colspan="6" style="text-align:center; color:var(--muted-dim); padding:20px; font-family:var(--font-mono); font-size:0.8rem">
+                  Cargando componentes de la placa...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Cuadro Pedagógico Informativo PCB -->
+          <div class="table-info-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>
+              <strong>Fundamento Algorítmico (Problema 2 — PCB Layout):</strong> Cada individuo representa las coordenadas continuas $(x_i, y_i) \in [0, 1]$ de los 14 componentes electrónicos mapeados al sustrato físico de $100 	imes 80	ext{ mm}$. El <em>Algoritmo Genético Simple</em> aplica Cruce de Un Solo Punto (SPX, $P_c = 90\%$) y Mutación Puntual ($P_m = 2\%$). Las soluciones con colisiones físicas entre componentes sufren una fuerte penalización en la función de aptitud, forzando al algoritmo a converger a soluciones 100% factibles (0 solapamientos) antes de optimizar la longitud Manhattan de las 22 pistas de cobre y compactar el área envolvente.
+            </span>
+          </div>
+        </div>
+
       </section>
 
       <!-- ════════════════════════════════════
@@ -582,12 +879,12 @@
                 <td style="padding: 10px;"><span class="badge badge-success">100% Factible</span></td>
                 <td style="padding: 10px;"><span class="badge badge-accent">Certificado</span></td>
               </tr>
-              <tr style="border-bottom: 1px solid var(--border); opacity: 0.5;">
-                <td style="padding: 10px;">P2: PCB (Circuitos)</td>
-                <td style="padding: 10px;">—</td>
-                <td style="padding: 10px;">—</td>
-                <td style="padding: 10px;">—</td>
-                <td style="padding: 10px;"><span class="badge">En cola</span></td>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 10px; font-weight: 600; color: var(--accent);">P2: PCB (Circuitos)</td>
+                <td style="padding: 10px;" class="mono" id="comp-pcb-fitness">0.67591</td>
+                <td style="padding: 10px;" class="mono" id="comp-pcb-metric">1080.2 mm (3168 mm²)</td>
+                <td style="padding: 10px;"><span class="badge badge-success">100% Factible</span></td>
+                <td style="padding: 10px;"><span class="badge badge-accent">Certificado</span></td>
               </tr>
               <tr style="opacity: 0.5;">
                 <td style="padding: 10px;">P3: Markowitz (Cartera)</td>
@@ -610,6 +907,7 @@
      MOTOR JS
      ════════════════════════════════════════════════════════════ -->
 <script src="data/vrp_results.js"></script>
+<script src="data/pcb_results.js"></script>
 <script src="app.js"></script>
 
 </body>

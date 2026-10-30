@@ -86,14 +86,17 @@ cuarto-taller-algoritmos-geneticos-ia/
 │   │   └── ga_engine.py                  # Algoritmo genético canónico parametrizable (estándar MATLAB)
 │   ├── problems/                         # Formulaciones matemáticas y decodificadores de problemas
 │   │   ├── __init__.py
-│   │   └── vrp.py                        # Problema 1: Modelo VRP, decodificador RKGA y visualizador
+│   │   ├── vrp.py                        # Problema 1: Modelo VRP, decodificador RKGA y visualizador
+│   │   └── pcb.py                        # Problema 2: Modelo PCB Layout, enrutamiento y colocación de chips
 │   └── web/                              # Capa de presentación visual (Dashboard SPA autónomo)
 │       ├── index.html                    # Dashboard interactivo con Canvas 2D y auditoría Chart.js
 │       ├── styles.css                    # Design System Glassmorphism Dark-Tech con tokens CSS
-│       ├── app.js                        # Controlador visual, animación de flota e inspectores de rutas
+│       ├── app.js                        # Controlador visual, renderers para VRP y PCB, y scrubber
 │       └── data/                         # Datasets sincronizados para consumo web directo
-│           ├── vrp_results.json          # Formato JSON estándar
-│           └── vrp_results.js            # Objeto window.VRP_SIMULATION_DATA (soporte file://)
+│           ├── vrp_results.json          # Formato JSON estándar (Problema 1)
+│           ├── vrp_results.js            # Objeto window.VRP_SIMULATION_DATA (soporte file://)
+│           ├── pcb_results.json          # Formato JSON estándar (Problema 2)
+│           └── pcb_results.js            # Objeto window.PCB_SIMULATION_DATA (soporte file://)
 ├── Entrega/                              # Documento final editable en formato Word (.docx)
 ├── .gitignore                            # Filtros de exclusión para control de versiones
 ├── .markdownlint.json                    # Reglas de estandarización para Markdownlint

@@ -497,8 +497,12 @@ input[type="range"]:disabled::-webkit-slider-thumb {
   flex-direction: column;
   gap: 6px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   transition: border-color var(--t-normal), box-shadow var(--t-normal);
+}
+
+.kpi-card:hover {
+  z-index: 50;
 }
 
 .kpi-card::before {
