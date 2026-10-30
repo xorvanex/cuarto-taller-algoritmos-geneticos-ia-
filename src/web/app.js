@@ -2538,27 +2538,17 @@ class DashboardController {
     const boxH = Math.max(0, maxY - minY);
     const area = boxW * boxH;
 
-    const clr = (typeof PCB_INSTANCE !== 'undefined' && PCB_INSTANCE.clearance) ? PCB_INSTANCE.clearance : 2.0;
+    // Detección física de colisiones/solapamientos entre componentes (idéntica a pcb.py)
     let overlapArea = 0;
     let errCount = 0;
     for (let i = 0; i < components.length; i++) {
       for (let j = i + 1; j < components.length; j++) {
         const c1 = components[i];
         const c2 = components[j];
-        const c1Left = c1.left !== undefined ? c1.left : (c1.x - c1.width / 2);
-        const c1Right = c1.right !== undefined ? c1.right : (c1.x + c1.width / 2);
-        const c1Bottom = c1.bottom !== undefined ? c1.bottom : (c1.y - c1.height / 2);
-        const c1Top = c1.top !== undefined ? c1.top : (c1.y + c1.height / 2);
-
-        const c2Left = c2.left !== undefined ? c2.left : (c2.x - c2.width / 2);
-        const c2Right = c2.right !== undefined ? c2.right : (c2.x + c2.width / 2);
-        const c2Bottom = c2.bottom !== undefined ? c2.bottom : (c2.y - c2.height / 2);
-        const c2Top = c2.top !== undefined ? c2.top : (c2.y + c2.height / 2);
-
-        const ox = Math.min(c1Right + clr, c2Right + clr) - Math.max(c1Left - clr, c2Left - clr);
-        const oy = Math.min(c1Top + clr, c2Top + clr) - Math.max(c1Bottom - clr, c2Bottom - clr);
-        if (ox > 0 && oy > 0) {
-          overlapArea += ox * oy;
+        const dx = (c1.width + c2.width) / 2.0 - Math.abs(c1.x - c2.x);
+        const dy = (c1.height + c2.height) / 2.0 - Math.abs(c1.y - c2.y);
+        if (dx > 0 && dy > 0) {
+          overlapArea += dx * dy;
           errCount++;
         }
       }
