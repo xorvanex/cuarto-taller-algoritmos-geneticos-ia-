@@ -2003,7 +2003,7 @@ class DashboardController {
     this.running = false;
     cancelAnimationFrame(this.rafId);
     this._setRunButtonState(false);
-    this._setStatus('ready', `⏸️ Simulación Pausada (Gen ${this.ga ? this.ga.generation : 0})`);
+    this._setStatus('ready', `Simulación Pausada (Gen ${this.ga ? this.ga.generation : 0})`);
   }
 
   _stepOnce() {
@@ -2026,7 +2026,7 @@ class DashboardController {
     if (done) {
       this._setStatus('done', `Convergencia: Gen ${this.ga.generation}`);
     } else {
-      this._setStatus('ready', `⏸️ Paso a Paso: Gen ${this.ga.generation} / ${maxG}`);
+      this._setStatus('ready', `Paso a Paso: Gen ${this.ga.generation} / ${maxG}`);
     }
   }
 
@@ -2070,7 +2070,7 @@ class DashboardController {
     const btnPause = document.getElementById('btn-pause');
 
     if (isRunning) {
-      if (btnText) btnText.textContent = 'Pausar';
+      if (btnText) btnText.textContent = 'Ejecutando...';
       if (btnIcon) btnIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
       if (btnPause) btnPause.disabled = false;
     } else {
@@ -2294,6 +2294,7 @@ class DashboardController {
     const pcbSlider = document.getElementById('timeline-pcb-slider');
     if (pcbSlider) {
       pcbSlider.addEventListener('input', () => {
+        if (this.pcbIsPlaying) this._pausePCB();
         const gen = parseInt(pcbSlider.value, 10);
         this._setPCBGeneration(gen);
       });
@@ -2415,6 +2416,12 @@ class DashboardController {
       this._renderPCBComponents(layout);
     }
 
+    // Sincronizar gráfica de convergencia rebanada en tiempo real
+    if (this.pcbChart && this.pcbData?.history) {
+      const targetGen = Math.min(gen, this.pcbData.history.length - 1);
+      this.pcbChart.update(this.pcbData.history.slice(0, targetGen + 1));
+    }
+
     // Actualizar KPI de fitness
     let bestFit = 0.67591;
     let stdFit = 0.04;
@@ -2456,13 +2463,14 @@ class DashboardController {
     const btnIcon = document.getElementById('icon-pcb-run');
     const btnPause = document.getElementById('btn-pcb-pause');
 
-    if (btnText) btnText.textContent = 'Pausar';
+    if (btnText) btnText.textContent = 'Ejecutando...';
     if (btnIcon) btnIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
     if (btnPause) btnPause.disabled = false;
 
     const maxG = this.pcbData?.metrics?.generations_executed || 150;
     if (this.pcbCurrentGen >= maxG) {
       this.pcbCurrentGen = 0;
+      this._setPCBGeneration(0);
     }
 
     let lastTick = performance.now();
