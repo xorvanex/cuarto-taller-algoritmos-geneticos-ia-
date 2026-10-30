@@ -74,12 +74,18 @@
 
 html { font-size: 16px; scroll-behavior: smooth; }
 
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* ELIMINA COMPLETAMENTE LA DOBLE BARRA DE NAVEGACIÓN */
+}
+
 body {
   font-family: var(--font-ui);
   background-color: var(--bg);
   color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
   line-height: 1.5;
 }
 
@@ -212,23 +218,28 @@ p { color: var(--muted); font-size: 0.875rem; }
 }
 
 .tab-btn.active {
-  color: var(--accent);
-  background: var(--accent-dim);
-  border-color: var(--border-accent);
-  box-shadow: var(--shadow-accent);
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(6, 182, 212, 0.3)) !important;
+  border-color: #10B981 !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.45) !important;
+  font-weight: 700;
 }
 
-.tab-btn.active svg { color: var(--accent); }
+.tab-btn.active svg {
+  color: #34D399 !important;
+  filter: drop-shadow(0 0 6px #10B981);
+}
 
 .tab-badge {
   font-size: 0.625rem;
   font-family: var(--font-mono);
-  background: var(--accent);
-  color: var(--bg);
-  padding: 1px 5px;
+  background: #10B981;
+  color: #070B12;
+  padding: 1px 6px;
   border-radius: var(--r-full);
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.02em;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
 .tab-badge.soon {
@@ -273,6 +284,14 @@ p { color: var(--muted); font-size: 0.875rem; }
 }
 
 /* ── Main Content ────────────────────────────────────────── */
+#app {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .main-layout {
   display: flex;
   flex: 1;
@@ -1323,4 +1342,100 @@ tbody td:first-child {
   margin-left: 6px;
   font-family: var(--font-mono);
   vertical-align: middle;
+}
+
+
+/* ── Acordeones de la Barra Lateral ───────────────────────── */
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: var(--sp-3);
+}
+
+.sidebar-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.sidebar-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-bright);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--sp-2) 0;
+  cursor: pointer;
+  transition: color var(--t-fast);
+}
+
+.sidebar-accordion-header:hover {
+  color: var(--accent);
+}
+
+.accordion-arrow {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--t-fast);
+  color: var(--muted);
+}
+
+.sidebar-accordion-header.collapsed .accordion-arrow {
+  transform: rotate(-90deg);
+}
+
+.sidebar-accordion-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: 4px;
+}
+
+.sidebar-accordion-content.collapsed {
+  display: none;
+}
+
+
+/* ── Canvas de Rutas Centrado ── */
+.map-panel-card .panel-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 11, 18, 0.7);
+}
+
+#vrp-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+
+/* ── Centrado de Tabla Top 8 ── */
+.pop-table-wrap table th,
+.pop-table-wrap table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.pop-table-wrap table td:nth-child(2) {
+  font-family: var(--font-mono);
+}
+
+.fitness-bar-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
 }

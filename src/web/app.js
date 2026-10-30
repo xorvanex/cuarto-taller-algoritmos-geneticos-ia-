@@ -475,14 +475,21 @@ class VRPRenderer {
     this.draw(null, []);
   }
 
-  /** Convierte coordenadas del problema [0-100] → píxeles CSS del canvas. */
+  /**
+   * Convierte coordenadas del problema [0-100] → píxeles CSS del canvas,
+   * manteniendo un plano cartesiano perfectamente cuadrado (1:1) y centrado.
+   */
   _toCanvas(x, y) {
-    const pad = 35;
-    const w   = (this.cssWidth  || 400) - 2 * pad;
-    const h   = (this.cssHeight || 300) - 2 * pad;
+    const pad = 28;
+    const w = this.cssWidth || 400;
+    const h = this.cssHeight || 300;
+    const side = Math.min(w - 2 * pad, h - 2 * pad);
+    const offsetX = (w - side) / 2;
+    const offsetY = (h - side) / 2;
+
     return {
-      px: pad + (x / 100) * w,
-      py: pad + (1 - y / 100) * h,  // Y invertido (canvas origin arriba-izq)
+      px: offsetX + (x / 100) * side,
+      py: offsetY + (1 - y / 100) * side,  // Y invertido para plano cartesiano
     };
   }
 
@@ -501,7 +508,7 @@ class VRPRenderer {
     const my   = e.clientY - rect.top;
 
     let closest = null;
-    let minD    = 15;  // radio de detección en px CSS
+    let minD    = 18;  // radio de detección en px CSS
 
     // Depot
     const dep = this._toCanvas(this.instance.depot.x, this.instance.depot.y);
@@ -521,14 +528,14 @@ class VRPRenderer {
     if (closest) {
       let label = '';
       if (closest.type === 'depot') {
-        label = `🏭 Depósito (${this.instance.depot.x}, ${this.instance.depot.y})`;
+        label = `🏭 Depósito Central (${this.instance.depot.x}, ${this.instance.depot.y})`;
       } else {
         const c = this.instance.customers[closest.index];
         label = `${c.id} | Dem: ${c.demand} kg | Serv: ${c.service} min`;
       }
       tooltip.style.display = 'block';
-      tooltip.style.left = (e.offsetX + 12) + 'px';
-      tooltip.style.top  = (e.offsetY - 24) + 'px';
+      tooltip.style.left = (e.offsetX + 14) + 'px';
+      tooltip.style.top  = (e.offsetY - 28) + 'px';
       tooltip.textContent = label;
     } else {
       tooltip.style.display = 'none';
@@ -537,23 +544,25 @@ class VRPRenderer {
   }
 
   /**
-   * Dibuja el mapa de rutas VRP.
+   * Dibuja el mapa de rutas VRP centrado y escalado.
    * @param {number[][]} routes   - rutas actuales (puede ser null)
-   * @param {number[]}   [routeColors]
+   * @param {string[]}   [routeColors]
    */
   draw(routes, routeColors = ROUTE_COLORS) {
     const canvas = this.canvas;
     const ctx    = this.ctx;
 
-    const rect = canvas.getBoundingClientRect();
+    // Obtener dimensiones reales del contenedor padre (.panel-body)
+    const rect = canvas.parentElement.getBoundingClientRect();
     const dpr  = window.devicePixelRatio || 1;
-    const w    = rect.width  || 400;
-    const h    = rect.height || 300;
+    const w    = Math.floor(rect.width) || 400;
+    const h    = Math.floor(rect.height) || 300;
 
-    canvas.width  = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
-    canvas.style.width  = w + 'px';
-    canvas.style.height = h + 'px';
+    // Ajustar resolución del canvas para retina displays
+    if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+      canvas.width  = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+    }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
@@ -563,17 +572,17 @@ class VRPRenderer {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Fondo oscuro
-    ctx.fillStyle = 'rgba(7, 11, 18, 0.5)';
+    // Fondo completo de la tarjeta
+    ctx.fillStyle = 'rgba(7, 11, 18, 0.75)';
     ctx.fillRect(0, 0, w, h);
 
-    // Grid de referencia
+    // Cuadrícula 1:1 centrada
     this._drawGrid(ctx, w, h);
 
     // Rutas
     if (routes) {
       routes.forEach((route, v) => {
-        if (route.length === 0) return;
+        if (!route || route.length === 0) return;
         this._drawRoute(ctx, route, routeColors[v] || '#fff');
       });
     }
@@ -589,23 +598,39 @@ class VRPRenderer {
 
   _drawGrid(ctx, w, h) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    const pad = 28;
+    const side = Math.min(w - 2 * pad, h - 2 * pad);
+    const offsetX = (w - side) / 2;
+    const offsetY = (h - side) / 2;
+
+    // Recuadro interior centrado con brillo tenue
+    ctx.fillStyle = 'rgba(11, 15, 25, 0.8)';
+    ctx.fillRect(offsetX, offsetY, side, side);
+
+    // Cuadrícula 10x10
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth   = 1;
-    const pad = 35;
+    const step = side / 10;
 
-    for (let x = pad; x <= w - pad; x += (w - 2 * pad) / 10) {
+    for (let i = 0; i <= 10; i++) {
+      const pos = offsetX + i * step;
       ctx.beginPath();
-      ctx.moveTo(x, pad);
-      ctx.lineTo(x, h - pad);
+      ctx.moveTo(pos, offsetY);
+      ctx.lineTo(pos, offsetY + side);
+      ctx.stroke();
+
+      const yPos = offsetY + i * step;
+      ctx.beginPath();
+      ctx.moveTo(offsetX, yPos);
+      ctx.lineTo(offsetX + side, yPos);
       ctx.stroke();
     }
 
-    for (let y = pad; y <= h - pad; y += (h - 2 * pad) / 10) {
-      ctx.beginPath();
-      ctx.moveTo(pad, y);
-      ctx.lineTo(w - pad, y);
-      ctx.stroke();
-    }
+    // Marco exterior de la zona logística
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.25)';
+    ctx.lineWidth   = 1.5;
+    ctx.strokeRect(offsetX, offsetY, side, side);
+
     ctx.restore();
   }
 
@@ -618,128 +643,117 @@ class VRPRenderer {
     ];
 
     ctx.save();
-
-    // Sombra/glow de la ruta
     ctx.shadowColor  = color;
-    ctx.shadowBlur   = 6;
-    ctx.strokeStyle  = color + 'BB';
-    ctx.lineWidth    = 2;
-    ctx.lineJoin     = 'round';
+    ctx.shadowBlur   = 8;
+    ctx.strokeStyle  = color + 'CC';
+    ctx.lineWidth    = 2.2;
     ctx.lineCap      = 'round';
+    ctx.lineJoin     = 'round';
 
     ctx.beginPath();
-    ctx.moveTo(points[0].px, points[0].py);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].px, points[i].py);
-    }
+    points.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(p.px, p.py);
+      else ctx.lineTo(p.px, p.py);
+    });
     ctx.stroke();
 
-    // Flechas de dirección en el segmento medio
+    // Flechas direccionales
     for (let i = 0; i < points.length - 1; i++) {
-      this._drawArrow(ctx, points[i], points[i+1], color);
+      this._drawArrow(ctx, points[i], points[i + 1], color);
     }
-
     ctx.restore();
   }
 
   _drawArrow(ctx, from, to, color) {
-    const mx   = (from.px + to.px) / 2;
-    const my   = (from.py + to.py) / 2;
-    const ang  = Math.atan2(to.py - from.py, to.px - from.px);
-    const size = 6;
+    const mx  = (from.px + to.px) / 2;
+    const my  = (from.py + to.py) / 2;
+    const ang = Math.atan2(to.py - from.py, to.px - from.px);
+    const len = 7;
 
     ctx.save();
     ctx.translate(mx, my);
     ctx.rotate(ang);
-    ctx.fillStyle   = color;
-    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.moveTo(size, 0);
-    ctx.lineTo(-size * 0.6, -size * 0.4);
-    ctx.lineTo(-size * 0.6,  size * 0.4);
+    ctx.moveTo(len, 0);
+    ctx.lineTo(-len * 0.7, -len * 0.5);
+    ctx.lineTo(-len * 0.7,  len * 0.5);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
   }
 
-  _drawCustomer(ctx, c, idx, routes) {
+  _drawCustomer(ctx, c, i, routes) {
     const { px, py } = this._toCanvas(c.x, c.y);
+    const isHovered  = this.hoveredNode?.type === 'customer' && this.hoveredNode.index === i;
 
-    // Determinar a qué ruta pertenece
+    // Determinar qué camión atiende al cliente
     let color = '#64748B';
     if (routes) {
-      for (let v = 0; v < routes.length; v++) {
-        if (routes[v].includes(idx)) {
-          color = ROUTE_COLORS[v];
-          break;
-        }
-      }
+      routes.forEach((route, v) => {
+        if (route.includes(i)) color = ROUTE_COLORS[v] || '#fff';
+      });
     }
 
-    const r = 5 + (c.demand / 22) * 3;  // radio proporcional a demanda
-
     ctx.save();
+    if (isHovered) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur  = 16;
+      ctx.beginPath();
+      ctx.arc(px, py, 13, 0, Math.PI * 2);
+      ctx.fillStyle = color + '33';
+      ctx.fill();
+    }
 
-    // Glow
-    ctx.shadowColor = color;
-    ctx.shadowBlur  = 8;
-
-    // Círculo exterior
     ctx.beginPath();
-    ctx.arc(px, py, r + 2, 0, Math.PI * 2);
-    ctx.fillStyle = color + '22';
-    ctx.fill();
-
-    // Círculo interior
-    ctx.beginPath();
-    ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.arc(px, py, isHovered ? 9 : 7, 0, Math.PI * 2);
     ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur  = 6;
     ctx.fill();
 
-    // Borde
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-    ctx.lineWidth   = 1;
-    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#070B12';
+    ctx.fill();
 
-    // Label
-    ctx.shadowBlur  = 0;
-    ctx.fillStyle   = '#F8FAFC';
-    ctx.font        = `bold ${Math.max(8, r * 1.4)}px 'Fira Code', monospace`;
-    ctx.textAlign   = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(c.id.replace('C', ''), px, py);
+    // Etiqueta del nodo
+    ctx.fillStyle    = '#F8FAFC';
+    ctx.font         = 'bold 9px "Fira Code", monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(c.id, px, py - 9);
 
     ctx.restore();
   }
 
   _drawDepot(ctx) {
     const { px, py } = this._toCanvas(this.instance.depot.x, this.instance.depot.y);
+    const isHovered  = this.hoveredNode?.type === 'depot';
+    const sz         = isHovered ? 12 : 9;
 
     ctx.save();
-    ctx.shadowColor = '#F8FAFC';
-    ctx.shadowBlur  = 12;
+    if (isHovered) {
+      ctx.shadowColor = '#10B981';
+      ctx.shadowBlur  = 20;
+    }
 
-    // Depot: cuadrado rotado 45° (diamante)
-    const s = 10;
-    ctx.beginPath();
-    ctx.moveTo(px,     py - s);
-    ctx.lineTo(px + s, py    );
-    ctx.lineTo(px,     py + s);
-    ctx.lineTo(px - s, py    );
-    ctx.closePath();
+    ctx.translate(px, py);
+    ctx.rotate(Math.PI / 4);
 
-    ctx.fillStyle   = 'rgba(248,250,252,0.9)';
-    ctx.fill();
-    ctx.strokeStyle = '#10B981';
-    ctx.lineWidth   = 2;
-    ctx.stroke();
-
-    ctx.shadowBlur  = 0;
     ctx.fillStyle   = '#0B0F19';
-    ctx.font        = 'bold 9px Inter, sans-serif';
-    ctx.textAlign   = 'center';
+    ctx.strokeStyle = '#10B981';
+    ctx.lineWidth   = 2.2;
+    ctx.fillRect(-sz, -sz, sz * 2, sz * 2);
+    ctx.strokeRect(-sz, -sz, sz * 2, sz * 2);
+
+    ctx.rotate(-Math.PI / 4);
+    ctx.fillStyle    = '#10B981';
+    ctx.font         = 'bold 8px "Inter", sans-serif';
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('D', px, py);
+    ctx.fillText('D', 0, 0);
+
     ctx.restore();
   }
 }
@@ -937,6 +951,9 @@ class DashboardController {
     this.lastTick  = 0;
     this.speedMs   = 40;   // ms entre generaciones (calibrado)
 
+    /* Historial dinámico de rutas en vivo */
+    this.liveGenerationRoutes = [];
+
     /* Parámetros actuales */
     this.params    = { ...DEFAULT_PARAMS };
     this.mode      = 'catedra';  // 'catedra' | 'libre'
@@ -954,7 +971,7 @@ class DashboardController {
     // Cargar datos oficiales de Python si están presentes
     this.pyData = PY_DATA;
 
-    // SIEMPRE inicializar una instancia de GA para evitar TypeError
+    // SIEMPRE inicializar una instancia de GA para evitar crashes
     this.ga = new SimpleGeneticAlgorithm(this.params, VRP_INSTANCE);
 
     // Cargar solución certificada de Python si estamos en modo cátedra
@@ -972,8 +989,9 @@ class DashboardController {
     this._bindSliders();
     this._bindControls();
     this._bindTimeline();
+    this._bindAccordions();
 
-    // Resize observer para re-dibujar el canvas
+    // Resize observer para re-dibujar el canvas centrado
     const ro = new ResizeObserver(() => this._redrawCanvas());
     ro.observe(canvas.parentElement);
   }
@@ -1039,7 +1057,7 @@ class DashboardController {
     if (compFitness) compFitness.textContent = metrics.best_fitness.toFixed(5);
     if (compDist)    compDist.textContent    = metrics.total_distance_km.toFixed(1) + ' km';
 
-    // Tabla de top individuos generada por Python con roles pedagógicos
+    // Tabla de top individuos generada por Python con roles pedagógicos centrados
     const tbody = document.getElementById('pop-tbody');
     if (tbody && top_individuals) {
       tbody.innerHTML = top_individuals.map((ind, i) => {
@@ -1067,6 +1085,20 @@ class DashboardController {
     }
 
     this._setStatus('ready', '🟢 Caso Base Certificado');
+  }
+
+  /* ── Acordeones de la barra lateral ──────────────────────── */
+  _bindAccordions() {
+    document.querySelectorAll('.sidebar-accordion-header').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const accId = btn.dataset.accordion;
+        const content = document.getElementById(`acc-${accId}`);
+        if (content) {
+          const isCollapsed = content.classList.toggle('collapsed');
+          btn.classList.toggle('collapsed', isCollapsed);
+        }
+      });
+    });
   }
 
   /* ── Tabs ────────────────────────────────────────────────── */
@@ -1141,7 +1173,6 @@ class DashboardController {
     if (slSpeed) {
       slSpeed.addEventListener('input', () => {
         const v = parseInt(slSpeed.value, 10);
-        // Calibración realista: 1x (150ms lento/detallado), 5x (40ms fluido), 10x (12ms turbo)
         const speedMap = { 1: 150, 2: 120, 3: 90, 4: 60, 5: 40, 6: 30, 7: 22, 8: 16, 9: 12, 10: 8 };
         this.speedMs = speedMap[v] || 40;
         if (valSpeed) {
@@ -1152,7 +1183,7 @@ class DashboardController {
     }
   }
 
-  /* ── Timeline Scrubber Interactivo ───────────────────────── */
+  /* ── Timeline Scrubber Interactivo Dinámico ──────────────── */
   _bindTimeline() {
     const sl = document.getElementById('timeline-slider');
     if (!sl) return;
@@ -1168,14 +1199,21 @@ class DashboardController {
     const curDisp = document.getElementById('gen-current-display');
     if (curDisp) curDisp.textContent = gen;
 
-    // Si tenemos los datos oficiales de Python
-    if (this.pyData && this.mode === 'catedra') {
+    // Actualizar barra de progreso
+    const pct = ((gen / this.params.maxGens) * 100).toFixed(1);
+    const fill = document.getElementById('progress-fill');
+    if (fill) fill.style.width = pct + '%';
+
+    // 1. Si estamos en modo Cátedra con datos pre-generados de Python
+    if (this.mode === 'catedra' && this.pyData) {
       const history = this.pyData.history;
+      const genRoutes = this.pyData.generation_routes;
+
       if (history && history.length > 0) {
         const targetGen = Math.min(gen, history.length - 1);
         const stat = history[targetGen];
 
-        // Actualizar porción de la curva
+        // Actualizar porción de la gráfica de convergencia
         this.chart.update(history.slice(0, targetGen + 1));
 
         // Actualizar KPIs para esa generación
@@ -1185,24 +1223,25 @@ class DashboardController {
         this._setText('kpi-feasible', stat.worst > 500 ? 'Penaliz.' : '100%');
         this._setText('kpi-aptitud',  ((1.0 - Math.min(stat.best, 1.0)) * 100).toFixed(2) + '%');
 
-        // Barra de progreso
-        const pct = ((gen / this.params.maxGens) * 100).toFixed(1);
-        const fill = document.getElementById('progress-fill');
-        if (fill) fill.style.width = pct + '%';
-
-        // Rutas en canvas
-        if (gen === this.params.maxGens) {
-          this.renderer.draw(this.pythonRoutes);
-        } else if (gen === 0) {
-          this.renderer.draw(null);
-        } else {
+        // ¡ACTUALIZAR EL GRAFO DE RUTAS REAL PARA ESA GENERACIÓN!
+        if (genRoutes && genRoutes[targetGen]) {
+          this.renderer.draw(genRoutes[targetGen]);
+        } else if (gen === this.params.maxGens) {
           this.renderer.draw(this.pythonRoutes);
         }
 
         this._setStatus('ready', `🔍 Inspección: Gen ${gen} / ${this.params.maxGens}`);
       }
-    } else if (this.ga) {
-      // Modo interactivo
+    } 
+    // 2. Si estamos en modo interactivo/libre (usando rutas guardadas en vivo)
+    else if (this.ga) {
+      if (this.liveGenerationRoutes[gen]) {
+        this.renderer.draw(this.liveGenerationRoutes[gen]);
+      }
+      if (this.ga.history && this.ga.history.length > 0) {
+        const targetGen = Math.min(gen, this.ga.history.length - 1);
+        this.chart.update(this.ga.history.slice(0, targetGen + 1));
+      }
       this._updateUI();
     }
   }
@@ -1361,6 +1400,9 @@ class DashboardController {
     const sol = this.ga.getBestSolution();
     this.renderer.draw(sol.routes);
 
+    // Guardar en el buffer dinámico de rutas por generación
+    this.liveGenerationRoutes[this.ga.generation] = sol.routes;
+
     // Actualizar gráfica
     this.chart.update(this.ga.history);
 
@@ -1375,7 +1417,11 @@ class DashboardController {
 
   _resetGA() {
     this.ga = new SimpleGeneticAlgorithm(this.params, VRP_INSTANCE);
-    this.renderer.draw(null);
+    this.liveGenerationRoutes = [];
+    const sol = this.ga.getBestSolution();
+    this.liveGenerationRoutes[0] = sol.routes;
+    this.renderer.draw(sol.routes);
+
     const sl = document.getElementById('timeline-slider');
     if (sl) sl.value = 0;
     const curDisp = document.getElementById('gen-current-display');
@@ -1384,7 +1430,13 @@ class DashboardController {
 
   _redrawCanvas() {
     if (this.mode === 'catedra' && this.pythonRoutes) {
-      this.renderer.draw(this.pythonRoutes);
+      const sl = document.getElementById('timeline-slider');
+      const gen = sl ? parseInt(sl.value, 10) : 150;
+      if (this.pyData?.generation_routes && this.pyData.generation_routes[gen]) {
+        this.renderer.draw(this.pyData.generation_routes[gen]);
+      } else {
+        this.renderer.draw(this.pythonRoutes);
+      }
       return;
     }
     if (!this.ga) return;
@@ -1438,7 +1490,7 @@ class DashboardController {
       }
     }
 
-    // Tabla de mejores individuos con rol evolutivo
+    // Tabla de mejores individuos con rol evolutivo centrado
     const tbody = document.getElementById('pop-tbody');
     if (tbody) {
       if (ga.generation === 0) {

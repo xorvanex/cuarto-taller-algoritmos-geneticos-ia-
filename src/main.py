@@ -141,6 +141,13 @@ def export_vrp_results(
             }
             for rank, idx in enumerate(np.argsort(result.final_fitness)[:8])
         ],
+        "generation_routes": [
+            [
+                [cid - 1 for cid in r.stops]
+                for r in VRPModel(instance).decode_chromosome(s.best_chromosome).routes
+            ]
+            for s in result.history
+        ],
     }
 
     # 1. Guardar en data/vrp_results.json
