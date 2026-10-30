@@ -1123,3 +1123,204 @@ tbody td:first-child {
 
 .hidden { display: none !important; }
 
+
+
+/* ── Corrección de Tooltips en Cabecera (Evita recorte en bordes de tarjetas) ── */
+.panel-header .tooltip-wrap {
+  position: relative;
+}
+
+.panel-header .tooltip-text {
+  top: calc(100% + 8px) !important;
+  bottom: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+.panel-header .tooltip-text::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: transparent transparent var(--surface-high) transparent;
+}
+
+/* ── Tooltips Informativos para KPIs ── */
+.kpi-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+}
+
+.kpi-info-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.kpi-info-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted-dim);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: var(--r-full);
+  transition: color var(--t-fast), background var(--t-fast);
+  line-height: 1;
+}
+
+.kpi-info-btn:hover {
+  color: var(--accent);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.kpi-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 250px;
+  background: var(--surface-high);
+  border: var(--glass-border);
+  border-radius: var(--r-sm);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: 0.6875rem;
+  font-family: var(--font-ui);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity var(--t-fast), transform var(--t-fast);
+  line-height: 1.45;
+}
+
+.kpi-info-wrap:hover .kpi-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Línea de Tiempo Scrubber en Control Bar ── */
+.control-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.control-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.control-timeline {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 240px;
+  padding-left: var(--sp-3);
+  border-left: var(--glass-border);
+}
+
+.timeline-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.6875rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.timeline-title {
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 0.04em;
+}
+
+.timeline-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--surface-high);
+  outline: none;
+  cursor: pointer;
+  accent-color: var(--accent);
+  transition: opacity var(--t-fast);
+}
+
+.timeline-slider:hover {
+  filter: drop-shadow(0 0 5px var(--accent-glow));
+}
+
+/* ── Cuadro Pedagógico para Tabla de Población ── */
+.pop-table-sub {
+  font-size: 0.6875rem;
+  color: var(--muted-dim);
+  margin-top: 2px;
+}
+
+.pop-table-tags {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.table-info-box {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: var(--r-md);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.table-info-box svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.role-badge {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  padding: 2px 7px;
+  border-radius: var(--r-full);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.role-elite {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent);
+  border: 1px solid var(--border-accent);
+}
+
+.role-tourn {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.topbar-badge-tag {
+  font-size: 0.625rem;
+  padding: 2px 6px;
+  border-radius: var(--r-full);
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent);
+  border: 1px solid var(--border-accent);
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  vertical-align: middle;
+}

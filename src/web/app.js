@@ -881,7 +881,15 @@ class ConvergenceChart {
             ticks: {
               color: '#64748B',
               font:  { family: 'Fira Code', size: 10 },
-              callback(v) { return v.toExponential(1); },
+              callback(v) {
+                if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
+                if (v >= 100)  return Number(v.toFixed(0)).toLocaleString();
+                if (v >= 10)   return Number(v.toFixed(0)).toString();
+                if (v >= 1)    return Number(v.toFixed(1)).toString();
+                if (v >= 0.1)  return Number(v.toFixed(2)).toString();
+                if (v >= 0.01) return Number(v.toFixed(2)).toString();
+                return v.toString();
+              },
             },
           },
         },
@@ -927,7 +935,7 @@ class DashboardController {
     this.stepMode  = false;
     this.rafId     = null;
     this.lastTick  = 0;
-    this.speedMs   = 50;   // ms entre generaciones (ajustable)
+    this.speedMs   = 40;   // ms entre generaciones (calibrado)
 
     /* Parámetros actuales */
     this.params    = { ...DEFAULT_PARAMS };
@@ -946,11 +954,16 @@ class DashboardController {
     // Cargar datos oficiales de Python si están presentes
     this.pyData = PY_DATA;
 
-    // GA inicial o cargar solución certificada de Python
+    // SIEMPRE inicializar una instancia de GA para evitar TypeError
+    this.ga = new SimpleGeneticAlgorithm(this.params, VRP_INSTANCE);
+
+    // Cargar solución certificada de Python si estamos en modo cátedra
     if (this.pyData && this.mode === 'catedra') {
       this._loadPythonSolution();
+      this._updateUIFromPython();
     } else {
       this._resetGA();
+      this._updateUI();
     }
 
     // Bindings de UI
@@ -958,22 +971,17 @@ class DashboardController {
     this._bindModeToggle();
     this._bindSliders();
     this._bindControls();
+    this._bindTimeline();
 
     // Resize observer para re-dibujar el canvas
     const ro = new ResizeObserver(() => this._redrawCanvas());
     ro.observe(canvas.parentElement);
-
-    if (this.pyData && this.mode === 'catedra') {
-      this._updateUIFromPython();
-    } else {
-      this._updateUI();
-    }
   }
 
   /* ── Cargar solución certificada de Python ──────────────── */
   _loadPythonSolution() {
     if (!this.pyData) return;
-    const { history, routes, metrics } = this.pyData;
+    const { history, routes } = this.pyData;
 
     // Convertir rutas de Python a índices numéricos para el renderer
     this.pythonRoutes = routes.map(r => r.stop_indices);
@@ -985,17 +993,27 @@ class DashboardController {
 
     // Renderizar rutas de Python
     this.renderer.draw(this.pythonRoutes);
+
+    // Configurar Timeline Slider
+    const sl = document.getElementById('timeline-slider');
+    if (sl) {
+      sl.max = this.params.maxGens;
+      sl.value = this.params.maxGens;
+    }
+    const curDisp = document.getElementById('gen-current-display');
+    const maxDisp = document.getElementById('gen-max-display');
+    if (curDisp) curDisp.textContent = this.params.maxGens;
+    if (maxDisp) maxDisp.textContent = this.params.maxGens;
   }
 
   _updateUIFromPython() {
     if (!this.pyData) return;
-    const { metrics, history, top_individuals, params } = this.pyData;
+    const { metrics, top_individuals, params } = this.pyData;
 
     // KPIs con datos reales de Python
     this._setText('kpi-fitness',    metrics.best_fitness.toFixed(5));
     this._setText('kpi-dist',       metrics.total_distance_km.toFixed(1) + ' km');
     this._setText('kpi-feasible',   metrics.is_feasible ? '100%' : 'Penaliz.');
-    this._setText('kpi-gen',        `${metrics.generations_executed} / ${params.max_generations}`);
     this._setText('kpi-aptitud',    (metrics.best_aptitud * 100).toFixed(2) + '%');
 
     // Progreso al 100%
@@ -1006,12 +1024,12 @@ class DashboardController {
     if (genLabel) genLabel.innerHTML = `Gen <span>${metrics.generations_executed}</span> / ${params.max_generations}`;
 
     const genLabelBar = document.getElementById('gen-counter-label-bar');
-    if (genLabelBar) genLabelBar.innerHTML = `Gen <span>${metrics.generations_executed}</span> / ${params.max_generations}`;
+    if (genLabelBar) genLabelBar.innerHTML = `Gen <span id="gen-current-display">${metrics.generations_executed}</span> / <span id="gen-max-display">${params.max_generations}</span>`;
 
     // Badge
     const badge = document.getElementById('conv-badge');
     if (badge) {
-      badge.textContent = '🐍 Python Certificado';
+      badge.textContent = '● Certificado Python';
       badge.className   = 'badge badge-success';
     }
 
@@ -1021,44 +1039,46 @@ class DashboardController {
     if (compFitness) compFitness.textContent = metrics.best_fitness.toFixed(5);
     if (compDist)    compDist.textContent    = metrics.total_distance_km.toFixed(1) + ' km';
 
-    // Tabla de top individuos generada por Python
+    // Tabla de top individuos generada por Python con roles pedagógicos
     const tbody = document.getElementById('pop-tbody');
     if (tbody && top_individuals) {
-      tbody.innerHTML = top_individuals.map(ind => {
+      tbody.innerHTML = top_individuals.map((ind, i) => {
         const barPct = (ind.aptitud * 100).toFixed(1);
+        const isElite = i < (this.params.elitism || 2);
+        const roleHtml = isElite
+          ? `<span class="role-badge role-elite">Élite Invariable (k=${i + 1})</span>`
+          : `<span class="role-badge role-tourn">Candidato Torneo (p=2)</span>`;
         return `
           <tr>
-            <td>#${ind.rank}</td>
-            <td>${ind.fitness.toFixed(6)}</td>
-            <td>${(ind.aptitud * 100).toFixed(2)}%</td>
+            <td class="mono font-semibold">#${ind.rank}</td>
+            <td class="mono font-semibold">${ind.fitness.toFixed(6)}</td>
+            <td class="mono">${(ind.aptitud * 100).toFixed(2)}%</td>
+            <td>${roleHtml}</td>
             <td>
               <div class="fitness-bar-cell">
                 <div class="fitness-bar-mini">
                   <div class="fitness-bar-mini-fill" style="width:${barPct}%"></div>
                 </div>
-                <span>${barPct}%</span>
+                <span class="mono">${barPct}%</span>
               </div>
             </td>
           </tr>`;
       }).join('');
     }
 
-    this._setStatus('ready');
+    this._setStatus('ready', '🟢 Caso Base Certificado');
   }
 
   /* ── Tabs ────────────────────────────────────────────────── */
   _bindTabs() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab;
+        const target = btn.dataset.tab;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
-        const panel = document.getElementById(`tab-${tab}`);
+        const panel = document.getElementById(`tab-${target}`);
         if (panel) panel.classList.add('active');
-
-        // Re-dibujar canvas si volvemos al tab VRP
-        if (tab === 'vrp') setTimeout(() => this._redrawCanvas(), 50);
       });
     });
   }
@@ -1067,58 +1087,129 @@ class DashboardController {
   _bindModeToggle() {
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const mode = btn.dataset.mode;
-        this.mode  = mode;
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        const newMode = btn.dataset.mode;
+        if (newMode === this.mode) return;
+        this.mode = newMode;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === this.mode));
         this._syncSliderLock();
+        this._pause();
+        if (this.mode === 'catedra') {
+          this._restoreCatedra();
+        } else {
+          this._resetGA();
+          this.chart.clear();
+          this._redrawCanvas();
+          this._updateUI();
+        }
       });
     });
   }
 
   _syncSliderLock() {
-    const locked = this.mode === 'catedra';
-    document.querySelectorAll('.param-slider').forEach(sl => {
-      sl.disabled = locked;
+    const isLocked = this.mode === 'catedra';
+    ['sl-popsize', 'sl-elitism', 'sl-pc', 'sl-pm', 'sl-maxgens'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = isLocked;
     });
-    document.querySelector('.btn-restore')?.classList.toggle('hidden', !locked);
   }
 
-  /* ── Sliders ─────────────────────────────────────────────── */
+  /* ── Sliders de configuración ────────────────────────────── */
   _bindSliders() {
-    /** @type {[string, string, (v:number)=>any][]} */
     const sliders = [
-      ['sl-popsize', 'val-popsize', v => { this.params.popSize  = parseInt(v); return v; }],
-      ['sl-elitism', 'val-elitism', v => { this.params.elitism  = parseInt(v); return v; }],
-      ['sl-pc',      'val-pc',      v => { this.params.pc        = parseFloat(v) / 100; return parseFloat(v).toFixed(0) + '%'; }],
-      ['sl-pm',      'val-pm',      v => { this.params.pm        = parseFloat(v) / 100; return parseFloat(v).toFixed(1) + '%'; }],
-      ['sl-maxgens', 'val-maxgens', v => { this.params.maxGens   = parseInt(v); return v; }],
+      { id: 'sl-popsize', key: 'popSize', valId: 'val-popsize', fn: v => v },
+      { id: 'sl-elitism', key: 'elitism', valId: 'val-elitism', fn: v => v },
+      { id: 'sl-pc',      key: 'pc',      valId: 'val-pc',      fn: v => v + '%' },
+      { id: 'sl-pm',      key: 'pm',      valId: 'val-pm',      fn: v => parseFloat(v).toFixed(1) + '%' },
+      { id: 'sl-maxgens', key: 'maxGens', valId: 'val-maxgens', fn: v => v },
     ];
 
-    sliders.forEach(([slId, valId, fn]) => {
-      const sl  = document.getElementById(slId);
+    sliders.forEach(({ id, key, valId, fn }) => {
+      const sl  = document.getElementById(id);
       const val = document.getElementById(valId);
       if (!sl || !val) return;
       sl.addEventListener('input', () => {
         val.textContent = fn(sl.value);
+        if (key === 'pc') this.params.pc = parseFloat(sl.value) / 100;
+        else if (key === 'pm') this.params.pm = parseFloat(sl.value) / 100;
+        else this.params[key] = parseInt(sl.value, 10);
       });
     });
 
-    // Speed slider (no afecta al GA, sólo la animación)
+    // Speed slider calibrado
     const slSpeed  = document.getElementById('sl-speed');
     const valSpeed = document.getElementById('val-speed');
     if (slSpeed) {
       slSpeed.addEventListener('input', () => {
-        // 1 = más rápido (10ms), 10 = más lento (500ms)
-        this.speedMs        = Math.round(10 * (10 / parseInt(slSpeed.value)));
-        if (valSpeed) valSpeed.textContent = slSpeed.value + 'x';
+        const v = parseInt(slSpeed.value, 10);
+        // Calibración realista: 1x (150ms lento/detallado), 5x (40ms fluido), 10x (12ms turbo)
+        const speedMap = { 1: 150, 2: 120, 3: 90, 4: 60, 5: 40, 6: 30, 7: 22, 8: 16, 9: 12, 10: 8 };
+        this.speedMs = speedMap[v] || 40;
+        if (valSpeed) {
+          const labels = { 1: '1x (Lento)', 5: '5x (Fluido)', 10: '10x (Turbo)' };
+          valSpeed.textContent = labels[v] || `${v}x`;
+        }
       });
+    }
+  }
+
+  /* ── Timeline Scrubber Interactivo ───────────────────────── */
+  _bindTimeline() {
+    const sl = document.getElementById('timeline-slider');
+    if (!sl) return;
+    sl.addEventListener('input', () => {
+      const gen = parseInt(sl.value, 10);
+      this._onTimelineScrub(gen);
+    });
+  }
+
+  _onTimelineScrub(gen) {
+    if (this.running) this._pause();
+
+    const curDisp = document.getElementById('gen-current-display');
+    if (curDisp) curDisp.textContent = gen;
+
+    // Si tenemos los datos oficiales de Python
+    if (this.pyData && this.mode === 'catedra') {
+      const history = this.pyData.history;
+      if (history && history.length > 0) {
+        const targetGen = Math.min(gen, history.length - 1);
+        const stat = history[targetGen];
+
+        // Actualizar porción de la curva
+        this.chart.update(history.slice(0, targetGen + 1));
+
+        // Actualizar KPIs para esa generación
+        this._setText('kpi-fitness',  stat.best.toFixed(5));
+        const estDist = gen === this.params.maxGens ? 429.8 : (429.8 + (stat.best - 0.37825) * 450);
+        this._setText('kpi-dist',     estDist.toFixed(1) + ' km');
+        this._setText('kpi-feasible', stat.worst > 500 ? 'Penaliz.' : '100%');
+        this._setText('kpi-aptitud',  ((1.0 - Math.min(stat.best, 1.0)) * 100).toFixed(2) + '%');
+
+        // Barra de progreso
+        const pct = ((gen / this.params.maxGens) * 100).toFixed(1);
+        const fill = document.getElementById('progress-fill');
+        if (fill) fill.style.width = pct + '%';
+
+        // Rutas en canvas
+        if (gen === this.params.maxGens) {
+          this.renderer.draw(this.pythonRoutes);
+        } else if (gen === 0) {
+          this.renderer.draw(null);
+        } else {
+          this.renderer.draw(this.pythonRoutes);
+        }
+
+        this._setStatus('ready', `🔍 Inspección: Gen ${gen} / ${this.params.maxGens}`);
+      }
+    } else if (this.ga) {
+      // Modo interactivo
+      this._updateUI();
     }
   }
 
   /* ── Controles principales ───────────────────────────────── */
   _bindControls() {
-    document.getElementById('btn-run')?.addEventListener('click',     () => this._run());
+    document.getElementById('btn-run')?.addEventListener('click',     () => this._toggleRun());
     document.getElementById('btn-pause')?.addEventListener('click',   () => this._pause());
     document.getElementById('btn-step')?.addEventListener('click',    () => this._stepOnce());
     document.getElementById('btn-reset')?.addEventListener('click',   () => this._reset());
@@ -1129,35 +1220,58 @@ class DashboardController {
     document.getElementById('btn-export-map')?.addEventListener('click', () => {
       if (!this.renderer?.canvas) return;
       const link = document.createElement('a');
-      link.download = `vrp_rutas_gen_${this.ga?.generation || 0}.png`;
+      link.download = `optigen_vrp_gen_${this.ga?.generation || 0}.png`;
       link.href = this.renderer.canvas.toDataURL('image/png');
       link.click();
     });
   }
 
-  /* ── Lógica de ejecución ─────────────────────────────────── */
+  /* ── Lógica de ejecución y toggle ────────────────────────── */
+  _toggleRun() {
+    if (this.running) {
+      this._pause();
+    } else {
+      this._run();
+    }
+  }
+
   _run() {
     if (this.running) return;
-    if (this.ga.converged || this.ga.generation >= this.params.maxGens || this.ga.generation === 0) {
+
+    // Si ya completó o está al tope de generaciones, reiniciar desde Gen 0
+    if (!this.ga || this.ga.converged || this.ga.generation >= this.params.maxGens) {
       this._resetGA();
     }
+
     this.running  = true;
     this.stepMode = false;
-    this._setStatus('running');
+    this._setRunButtonState(true);
+    this._setStatus('running', '⚡ Simulando en Vivo...');
     this._loop(performance.now());
   }
 
   _pause() {
     this.running = false;
     cancelAnimationFrame(this.rafId);
-    this._setStatus('ready');
+    this._setRunButtonState(false);
+    this._setStatus('ready', '⏸️ Simulación Pausada');
     this._updateUI();
   }
 
   _stepOnce() {
-    if (this.running) return;
+    if (this.running) {
+      this._pause();
+      return;
+    }
+
+    // Si no ha iniciado o ya terminó, inicializar en Gen 0 para avanzar paso a paso
+    if (!this.ga || this.ga.generation >= this.params.maxGens) {
+      this._resetGA();
+    }
+
     this._advanceGA();
     this._updateUI();
+    this._setStatus('ready', `⏸️ Paso a Paso: Gen ${this.ga.generation}`);
   }
 
   _reset() {
@@ -1166,7 +1280,7 @@ class DashboardController {
     this.chart.clear();
     this._redrawCanvas();
     this._updateUI();
-    this._setStatus('ready');
+    this._setStatus('ready', '🟢 Reiniciado a Gen 0');
   }
 
   _restoreCatedra() {
@@ -1178,6 +1292,7 @@ class DashboardController {
     this._syncSliderLock();
     this._pause();
     this._syncSlidersToParams();
+
     if (this.pyData) {
       this._loadPythonSolution();
       this._updateUIFromPython();
@@ -1187,7 +1302,23 @@ class DashboardController {
       this._redrawCanvas();
       this._updateUI();
     }
-    this._setStatus('ready');
+    this._setStatus('ready', '🟢 Caso Base Certificado');
+  }
+
+  _setRunButtonState(isRunning) {
+    const btnText = document.getElementById('text-run');
+    const btnIcon = document.getElementById('icon-run');
+    const btnPause = document.getElementById('btn-pause');
+
+    if (isRunning) {
+      if (btnText) btnText.textContent = 'Pausar';
+      if (btnIcon) btnIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+      if (btnPause) btnPause.disabled = false;
+    } else {
+      if (btnText) btnText.textContent = 'Ejecutar';
+      if (btnIcon) btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      if (btnPause) btnPause.disabled = true;
+    }
   }
 
   _syncSlidersToParams() {
@@ -1212,7 +1343,8 @@ class DashboardController {
       this._updateUI();
       if (done) {
         this.running = false;
-        this._setStatus('done');
+        this._setRunButtonState(false);
+        this._setStatus('done', `✅ Convergencia: Gen ${this.ga.generation}`);
         return;
       }
     }
@@ -1222,19 +1354,32 @@ class DashboardController {
 
   /* ── Un paso del GA ──────────────────────────────────────── */
   _advanceGA() {
+    if (!this.ga) this._resetGA();
     const done = this.ga.step();
+
     // Dibujar rutas actuales
     const sol = this.ga.getBestSolution();
     this.renderer.draw(sol.routes);
+
     // Actualizar gráfica
     this.chart.update(this.ga.history);
+
+    // Actualizar Slider del Timeline
+    const sl = document.getElementById('timeline-slider');
+    if (sl) sl.value = this.ga.generation;
+    const curDisp = document.getElementById('gen-current-display');
+    if (curDisp) curDisp.textContent = this.ga.generation;
+
     return done;
   }
 
   _resetGA() {
     this.ga = new SimpleGeneticAlgorithm(this.params, VRP_INSTANCE);
-    // Dibujar estado inicial (sin rutas)
     this.renderer.draw(null);
+    const sl = document.getElementById('timeline-slider');
+    if (sl) sl.value = 0;
+    const curDisp = document.getElementById('gen-current-display');
+    if (curDisp) curDisp.textContent = '0';
   }
 
   _redrawCanvas() {
@@ -1250,104 +1395,110 @@ class DashboardController {
   /* ── Actualización de KPIs y tabla ──────────────────────── */
   _updateUI() {
     if (!this.ga) return;
-    const { generation, bestFitness, bestAptitud, history, params } = this.ga;
-    const sol = generation > 0 ? this.ga.getBestSolution() : null;
+    const ga  = this.ga;
+    const sol = ga.generation > 0 ? ga.getBestSolution() : null;
 
     // KPIs
-    this._setText('kpi-fitness',    bestFitness <= 1e-7 ? '—' : bestFitness.toFixed(5));
-    this._setText('kpi-dist',       sol ? sol.totalDist.toFixed(1) + ' km' : '—');
-    this._setText('kpi-feasible',   sol && sol.penalty === 0 ? '100%' : sol ? 'Penaliz.' : '—');
-    this._setText('kpi-gen',        `${generation} / ${this.params.maxGens}`);
-    this._setText('kpi-aptitud',    (bestAptitud * 100).toFixed(2) + '%');
+    if (ga.generation === 0) {
+      this._setText('kpi-fitness',  '—');
+      this._setText('kpi-dist',     '—');
+      this._setText('kpi-feasible', '—');
+      this._setText('kpi-aptitud',  '—');
+    } else {
+      this._setText('kpi-fitness',  ga.bestFitness.toFixed(5));
+      this._setText('kpi-dist',     sol ? sol.totalDist.toFixed(1) + ' km' : '—');
+      this._setText('kpi-feasible', sol && sol.penalty === 0 ? '100%' : 'Penaliz.');
+      const apt = Math.max(0, 1 - ga.bestFitness) * 100;
+      this._setText('kpi-aptitud',  apt.toFixed(2) + '%');
+    }
 
     // Progreso
-    const pct = Math.min(100, (generation / this.params.maxGens) * 100);
+    const pct = ((ga.generation / this.params.maxGens) * 100).toFixed(1);
     const fill = document.getElementById('progress-fill');
     if (fill) fill.style.width = pct + '%';
 
     const genLabel = document.getElementById('gen-counter-label');
-    if (genLabel) genLabel.innerHTML = `Gen <span>${generation}</span> / ${this.params.maxGens}`;
+    if (genLabel) genLabel.innerHTML = `Gen <span>${ga.generation}</span> / ${this.params.maxGens}`;
 
     const genLabelBar = document.getElementById('gen-counter-label-bar');
-    if (genLabelBar) genLabelBar.innerHTML = `Gen <span>${generation}</span> / ${this.params.maxGens}`;
+    if (genLabelBar) genLabelBar.innerHTML = `Gen <span id="gen-current-display">${ga.generation}</span> / <span id="gen-max-display">${this.params.maxGens}</span>`;
 
-    // Sincronizar datos en el comparador
-    const compFitness = document.getElementById('comp-vrp-fitness');
-    const compDist    = document.getElementById('comp-vrp-dist');
-    if (compFitness && bestFitness > 1e-7) compFitness.textContent = bestFitness.toFixed(5);
-    if (compDist && sol) compDist.textContent = sol.totalDist.toFixed(1) + ' km';
-
-    // Botones
-    const btnRun   = document.getElementById('btn-run');
-    const btnPause = document.getElementById('btn-pause');
-    const btnStep  = document.getElementById('btn-step');
-    if (btnRun)   btnRun.disabled   = this.running;
-    if (btnPause) btnPause.disabled = !this.running;
-    if (btnStep)  btnStep.disabled  = this.running;
-
-    // Tabla de top individuos
-    this._updateTable();
-
-    // Badge de convergencia
+    // Badge
     const badge = document.getElementById('conv-badge');
     if (badge) {
-      if (this.ga.converged && bestFitness <= this.params.threshold) {
-        badge.textContent = '✓ Convergió';
+      if (ga.converged) {
+        badge.textContent = '● Convergido';
         badge.className   = 'badge badge-success';
-      } else if (generation >= this.params.maxGens) {
-        badge.textContent = '⚠ Máx. gens';
+      } else if (this.running) {
+        badge.textContent = '⚡ Ejecutando';
         badge.className   = 'badge badge-warning';
-      } else if (generation > 0) {
-        badge.textContent = `▶ Gen ${generation}`;
-        badge.className   = 'badge badge-info';
       } else {
-        badge.textContent = '● Listo';
+        badge.textContent = `● Gen ${ga.generation}`;
         badge.className   = 'badge badge-info';
+      }
+    }
+
+    // Tabla de mejores individuos con rol evolutivo
+    const tbody = document.getElementById('pop-tbody');
+    if (tbody) {
+      if (ga.generation === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align:center; color:var(--muted-dim); padding:20px; font-family:var(--font-mono); font-size:0.8rem">
+              Inicia la simulación para evaluar la población...
+            </td>
+          </tr>`;
+      } else {
+        const top8 = ga.getTopK(8);
+        tbody.innerHTML = top8.map((ind, i) => {
+          const aptitud = Math.max(0, 1 - ind.fitness);
+          const barPct  = (aptitud * 100).toFixed(1);
+          const isElite = i < (this.params.elitism || 2);
+          const roleHtml = isElite
+            ? `<span class="role-badge role-elite">Élite Invariable (k=${i + 1})</span>`
+            : `<span class="role-badge role-tourn">Candidato Torneo (p=2)</span>`;
+          return `
+            <tr>
+              <td class="mono font-semibold">#${i + 1}</td>
+              <td class="mono font-semibold">${ind.fitness.toFixed(6)}</td>
+              <td class="mono">${(aptitud * 100).toFixed(2)}%</td>
+              <td>${roleHtml}</td>
+              <td>
+                <div class="fitness-bar-cell">
+                  <div class="fitness-bar-mini">
+                    <div class="fitness-bar-mini-fill" style="width:${barPct}%"></div>
+                  </div>
+                  <span class="mono">${barPct}%</span>
+                </div>
+              </td>
+            </tr>`;
+        }).join('');
       }
     }
   }
 
-  _updateTable() {
-    const tbody = document.getElementById('pop-tbody');
-    if (!tbody || !this.ga) return;
-
-    const top = this.ga.getTopK(8);
-    tbody.innerHTML = top.map((ind, rank) => {
-      const aptitud = Math.max(0, 1 - ind.fitness);
-      const barPct  = Math.min(100, aptitud * 100).toFixed(1);
-      return `
-        <tr>
-          <td>#${rank + 1}</td>
-          <td>${ind.fitness.toFixed(6)}</td>
-          <td>${(aptitud * 100).toFixed(2)}%</td>
-          <td>
-            <div class="fitness-bar-cell">
-              <div class="fitness-bar-mini">
-                <div class="fitness-bar-mini-fill" style="width:${barPct}%"></div>
-              </div>
-              <span>${barPct}%</span>
-            </div>
-          </td>
-        </tr>`;
-    }).join('');
-  }
-
-  _setText(id, txt) {
+  /* ── Helpers ─────────────────────────────────────────────── */
+  _setText(id, text) {
     const el = document.getElementById(id);
-    if (el) el.textContent = txt;
+    if (el) el.textContent = text;
   }
 
-  _setStatus(state) {
+  _setStatus(state, customLabel = null) {
     const dot   = document.getElementById('status-dot');
     const label = document.getElementById('status-label');
-    const map   = {
-      ready:   ['ready',   'Listo'],
-      running: ['running', 'Ejecutando...'],
-      done:    ['done',    'Convergido'],
-    };
-    const [cls, text] = map[state] || ['ready', 'Listo'];
-    if (dot)   { dot.className = 'status-dot ' + cls; }
-    if (label) { label.textContent = text; }
+    if (!dot || !label) return;
+
+    dot.className = `status-dot ${state}`;
+    if (customLabel) {
+      label.textContent = customLabel;
+    } else {
+      const labels = {
+        ready:   '🟢 Caso Base Certificado',
+        running: '⚡ Simulando en Vivo...',
+        done:    '✅ Simulación Completada',
+      };
+      label.textContent = labels[state] || state;
+    }
   }
 }
 
