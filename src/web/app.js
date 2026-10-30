@@ -764,13 +764,13 @@ class VRPRenderer {
 
 class ConvergenceChart {
   /**
-   * @param {string} canvasId
+   * @param {string|HTMLCanvasElement} canvasOrId
    */
-  constructor(canvasId) {
-    this.ctx     = document.getElementById(canvasId).getContext('2d');
+  constructor(canvasOrId) {
+    const el     = typeof canvasOrId === 'string' ? document.getElementById(canvasOrId) : canvasOrId;
+    this.ctx     = el ? el.getContext('2d') : null;
     this.chart   = null;
-    this._init();
-    this._initPCB();
+    if (this.ctx) this._init();
   }
 
   _init() {
@@ -1412,6 +1412,7 @@ class DashboardController {
     this.mode      = 'catedra';  // 'catedra' | 'libre'
 
     this._init();
+    this._initPCB();
   }
 
   /* ── Inicialización ──────────────────────────────────────── */
@@ -1658,6 +1659,10 @@ class DashboardController {
               </p>
             `;
             this._setStatus('ready', '🟢 Caso Base Certificado (PCB)');
+            if (this.pcbChart && this.pcbChart.chart) {
+              this.pcbChart.chart.resize();
+              this.pcbChart.chart.update();
+            }
             if (this.pcbRenderer) {
               requestAnimationFrame(() => this._setPCBGeneration(this.pcbCurrentGen));
             }
@@ -1696,6 +1701,10 @@ class DashboardController {
               </p>
             `;
             this._setStatus('ready', '🟢 Caso Base Certificado');
+            if (this.chart && this.chart.chart) {
+              this.chart.chart.resize();
+              this.chart.chart.update();
+            }
             if (this.renderer) {
               requestAnimationFrame(() => this._redrawCanvas());
             }
@@ -2209,7 +2218,7 @@ class DashboardController {
 
     const pcbChartCanvas = document.getElementById('pcb-convergence-chart');
     if (pcbChartCanvas) {
-      this.pcbChart = new ConvergenceChart(pcbChartCanvas, 1e-2);
+      this.pcbChart = new ConvergenceChart('pcb-convergence-chart');
       this.pcbChart.setMaxGens(150);
     }
 
