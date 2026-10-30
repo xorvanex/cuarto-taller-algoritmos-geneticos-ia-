@@ -630,18 +630,27 @@ input[type="range"]:disabled::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
 }
 
 /* Canvas */
-#vrp-canvas {
+#vrp-canvas,
+#pcb-canvas {
   width: 100%;
   height: 100%;
   display: block;
-  cursor: crosshair;
 }
 
+#vrp-canvas { cursor: crosshair; }
+#pcb-canvas { cursor: default; }
+
 /* Chart */
-#convergence-chart { max-height: 100%; }
+#convergence-chart,
+#pcb-convergence-chart {
+  max-height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+}
 
 /* ── Control Bar ─────────────────────────────────────────── */
 .control-bar {
@@ -1415,16 +1424,20 @@ tbody td:first-child {
   align-items: center;
   justify-content: center;
   background: rgba(7, 11, 18, 0.7);
+  min-height: 0;
 }
 
-#vrp-canvas {
+#vrp-canvas,
+#pcb-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
-  cursor: crosshair;
 }
+
+#vrp-canvas { cursor: crosshair; }
+#pcb-canvas { cursor: default; }
 
 /* ── Centrado de Tabla Top 8 ── */
 .pop-table-wrap table th,

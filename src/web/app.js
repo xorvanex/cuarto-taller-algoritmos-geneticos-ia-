@@ -1099,19 +1099,24 @@ class PCBRenderer {
       this.placed = placedComponents;
     }
 
+    const canvas = this.canvas;
+    const ctx = this.ctx;
+    const parent = canvas.parentElement;
+    const rect = parent ? parent.getBoundingClientRect() : canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    const rect = this.canvas.getBoundingClientRect();
-    const w = rect.width || 480;
-    const h = rect.height || 360;
+    const w = Math.floor(rect.width) || 480;
+    const h = Math.floor(rect.height) || 300;
+
+    if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+    }
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
 
     this.cssWidth = w;
     this.cssHeight = h;
-
-    this.canvas.width = Math.round(w * dpr);
-    this.canvas.height = Math.round(h * dpr);
-    const ctx = this.ctx;
-    ctx.resetTransform();
-    ctx.scale(dpr, dpr);
 
     // Fondo general oscuro
     ctx.fillStyle = '#070D14';
@@ -1447,7 +1452,20 @@ class DashboardController {
 
     // Resize observer para re-dibujar el canvas centrado
     const ro = new ResizeObserver(() => this._redrawCanvas());
-    ro.observe(canvas.parentElement);
+    if (canvas && canvas.parentElement) {
+      ro.observe(canvas.parentElement);
+    }
+
+    const pcbCanvas = document.getElementById('pcb-canvas');
+    if (pcbCanvas && pcbCanvas.parentElement) {
+      const roPCB = new ResizeObserver(() => {
+        if (this.currentTab === 'pcb' && this.pcbRenderer) {
+          const layout = this.pcbData?.generation_layouts?.[this.pcbCurrentGen] || this.pcbData?.placed_components || this.pcbRenderer.placed;
+          this.pcbRenderer.draw(layout);
+        }
+      });
+      roPCB.observe(pcbCanvas.parentElement);
+    }
   }
 
   /* ── Cargar solución certificada de Python ──────────────── */
@@ -1659,13 +1677,15 @@ class DashboardController {
               </p>
             `;
             this._setStatus('ready', '🟢 Caso Base Certificado (PCB)');
-            if (this.pcbChart && this.pcbChart.chart) {
-              this.pcbChart.chart.resize();
-              this.pcbChart.chart.update();
-            }
-            if (this.pcbRenderer) {
-              requestAnimationFrame(() => this._setPCBGeneration(this.pcbCurrentGen));
-            }
+            requestAnimationFrame(() => {
+              if (this.pcbChart && this.pcbChart.chart) {
+                this.pcbChart.chart.resize();
+                this.pcbChart.chart.update();
+              }
+              if (this.pcbRenderer) {
+                this._setPCBGeneration(this.pcbCurrentGen);
+              }
+            });
           } else if (target === 'vrp') {
             accBaseContent.innerHTML = `
               <div class="info-grid">
