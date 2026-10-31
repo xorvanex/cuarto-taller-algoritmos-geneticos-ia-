@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OptiGen AI — SGA v2.0 · Taller Algoritmos Genéticos</title>
-  <meta name="description" content="Dashboard interactivo para el Cuarto Taller de Algoritmos Genéticos — IA Corte 3, 2026. Dago David Palmera Navarro." />
+  <title>NexusOpt — Optimización Evolutiva e Inteligencia Artificial</title>
+  <meta name="description" content="NexusOpt: Plataforma de computación evolutiva y optimización heurística mediante Algoritmo Genético Simple (SGA) con manejo estricto de restricciones cuadráticas. Universidad de Cartagena." />
 
   <!-- ══ Google Fonts ══════════════════════════════════════ -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
 
@@ -28,41 +28,20 @@
        TOP BAR
        ════════════════════════════════════════════════════════ -->
   <header class="topbar">
-
     <!-- Brand (Izquierda) -->
     <div class="topbar-brand">
       <div class="topbar-logo" aria-hidden="true">
-        <!-- Logo SVG Natural y Bio-Inspirado: Doble Hélice Genética y Nodos Algorítmicos -->
-        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="bioGrad" x1="2" y1="2" x2="34" y2="34" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#10B981"/>
-              <stop offset="50%" stop-color="#06B6D4"/>
-              <stop offset="100%" stop-color="#3B82F6"/>
-            </linearGradient>
-            <filter id="glowBio" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="1.5" result="blur"/>
-              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-            </filter>
-          </defs>
-          <!-- Cintas orgánicas de doble hélice -->
-          <path d="M7 9 C15 3, 21 33, 29 27" stroke="url(#bioGrad)" stroke-width="2.6" stroke-linecap="round" filter="url(#glowBio)"/>
-          <path d="M7 27 C15 33, 21 3, 29 9" stroke="url(#bioGrad)" stroke-width="2.6" stroke-linecap="round" opacity="0.85"/>
-          <!-- Enlaces génicos -->
-          <line x1="11" y1="12" x2="14" y2="20" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
-          <line x1="18" y1="18" x2="18" y2="18" stroke="#06B6D4" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="22" y1="16" x2="25" y2="24" stroke="#3B82F6" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
-          <!-- Nodos biomiméticos -->
-          <circle cx="7" cy="9" r="2.8" fill="#10B981"/>
-          <circle cx="29" cy="27" r="2.8" fill="#3B82F6"/>
-          <circle cx="7" cy="27" r="2.8" fill="#06B6D4"/>
-          <circle cx="29" cy="9" r="2.8" fill="#10B981"/>
-          <circle cx="18" cy="18" r="3.2" fill="#FFFFFF"/>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="28" height="28" rx="7" fill="#111827" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+          <path d="M8 16L16 8L24 16L16 24Z" stroke="#10B981" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="16" cy="16" r="3.2" fill="#38BDF8"/>
+          <line x1="16" y1="8" x2="16" y2="24" stroke="rgba(255,255,255,0.22)" stroke-dasharray="2 2"/>
+          <line x1="8" y1="16" x2="24" y2="16" stroke="rgba(255,255,255,0.22)" stroke-dasharray="2 2"/>
         </svg>
       </div>
-      <div>
-        <div class="topbar-title">OptiGen AI <span class="topbar-badge-tag">SGA v2.0</span></div>
-        <div class="topbar-subtitle">Optimización Evolutiva · Inteligencia Artificial (Corte 3) · Dago David Palmera Navarro</div>
+      <div class="topbar-brand-text">
+        <div class="topbar-title">NexusOpt</div>
+        <div class="topbar-subtitle">Optimización Evolutiva e Inteligencia Artificial</div>
       </div>
     </div>
 
@@ -108,11 +87,15 @@
       </button>
     </nav>
 
-    <!-- Status pill (Derecha) -->
+    <!-- Meta & Academic attribution (Derecha) -->
     <div class="topbar-meta">
       <div class="status-pill" id="status-pill" role="status" aria-live="polite">
         <div class="status-dot ready" id="status-dot"></div>
         <span id="status-label">Caso Base Certificado</span>
+      </div>
+      <div class="topbar-academic-tag">
+        <span class="academic-author">Dago David Palmera Navarro</span>
+        <span class="academic-sub">Semestre VII · IA</span>
       </div>
     </div>
   </header>
@@ -292,7 +275,7 @@
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
               <span>Universidad de Cartagena · Facultad de Ingeniería · Ingeniería de Sistemas</span>
             </div>
-            <h1 class="landing-hero-title">OptiGen AI: <span>Optimización Evolutiva Multi-Dominio</span></h1>
+            <h1 class="landing-hero-title">NexusOpt: <span>Optimización Evolutiva Multi-Dominio</span></h1>
             <p class="landing-hero-desc">
               Plataforma computacional e interactiva de simulación basada en Algoritmo Genético Simple (SGA) con operadores canónicos de cátedra, manejo riguroso de restricciones complejas y funciones de penalización cuadrática exterior sobre tres problemas emblemáticos de ingeniería.
             </p>
@@ -1205,6 +1188,10 @@
               </div>
               <div class="panel-actions">
                 <span class="badge badge-accent">Espacio Riesgo vs. Retorno</span>
+                <button class="btn-chart-expand" data-expand-chart="mrk-frontier" title="Ampliar frontera eficiente">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  <span>Ampliar</span>
+                </button>
               </div>
             </div>
             <div class="panel-body" style="padding:12px 14px 8px">
@@ -1229,6 +1216,10 @@
               </div>
               <div class="panel-actions">
                 <span class="badge badge-accent">Función de Pérdida Penalizada</span>
+                <button class="btn-chart-expand" data-expand-chart="mrk-convergence" title="Ampliar convergencia de Markowitz">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  <span>Ampliar</span>
+                </button>
               </div>
             </div>
             <div class="panel-body" style="padding:12px 14px 8px">
@@ -1445,7 +1436,13 @@
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                   <span>Convergencia Normalizada Comparativa (f_norm)</span>
                 </div>
-                <div class="comp-chart-desc">Generaciones 0 a 150 · Élite k = 2</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span class="comp-chart-desc">Generaciones 0 a 150 · Élite k = 2</span>
+                  <button class="btn-chart-expand" data-expand-chart="comp-convergence" title="Ampliar comparativa global">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    <span>Ampliar</span>
+                  </button>
+                </div>
               </div>
               <div class="comp-chart-canvas-wrap">
                 <canvas id="comp-convergence-chart"></canvas>
@@ -1554,5 +1551,36 @@
 <script src="data/markowitz_results.js"></script>
 <script src="app.js"></script>
 
+  <!-- Modal de Expansión Avanzada de Gráficas y Análisis Detallado -->
+  <div id="chart-modal" class="chart-modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="chart-modal-card">
+      <div class="chart-modal-header">
+        <div class="chart-modal-title-group">
+          <span class="chart-modal-badge" id="chart-modal-badge">Gráfica Detallada</span>
+          <h3 class="chart-modal-title" id="chart-modal-title">Análisis Generacional de Convergencia</h3>
+        </div>
+        <div class="chart-modal-controls">
+          <button id="modal-btn-fullscreen" class="btn-modal-action" title="Pantalla completa" aria-label="Pantalla completa">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            <span id="modal-fs-text">Maximizar</span>
+          </button>
+          <button id="modal-btn-export" class="btn-modal-action" title="Exportar como PNG" aria-label="Exportar gráfico">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Exportar PNG</span>
+          </button>
+          <button id="modal-btn-close" class="btn-modal-action btn-modal-close" title="Cerrar modal" aria-label="Cerrar modal">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="chart-modal-canvas-wrap">
+        <canvas id="modal-expanded-canvas"></canvas>
+      </div>
+      <div class="chart-modal-footer">
+        <div class="chart-modal-stats" id="chart-modal-stats"></div>
+        <div class="chart-modal-hint">Presione ESC o haga clic fuera para cerrar</div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -1638,9 +1638,15 @@ class DashboardController {
     this.params    = { ...DEFAULT_PARAMS };
     this.mode      = 'catedra';  // 'catedra' | 'libre'
 
+    this.modalChart = null;
+    this.currentModalChartKey = null;
+    this.compConvergenceChart = null;
+    this.compRadarChart = null;
+
     this._init();
     this._initPCB();
     this._initMarkowitz();
+    this._bindChartModalEvents();
   }
 
   /* ── Inicialización ──────────────────────────────────────── */
@@ -1850,6 +1856,18 @@ class DashboardController {
     });
   }
 
+  switchTab(target) {
+    const tabBtn = document.querySelector(`.tab-btn[data-tab="${target}"]`);
+    if (tabBtn) {
+      tabBtn.click();
+    } else {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      const panel = document.getElementById(`tab-${target}`);
+      if (panel) panel.classList.add('active');
+    }
+  }
+
   /* ── Tabs ────────────────────────────────────────────────── */
   _bindTabs() {
     // Delegación de eventos para botones data-tab-goto (en landing u otras secciones)
@@ -1878,7 +1896,7 @@ class DashboardController {
         if (layout) {
           if (target === 'landing') {
             layout.classList.add('on-landing');
-            this._setStatus('ready', 'OptiGen AI · Plataforma de Simulación');
+            this._setStatus('ready', 'NexusOpt · Plataforma de Simulación');
             return;
           } else {
             layout.classList.remove('on-landing');
@@ -3257,6 +3275,663 @@ class DashboardController {
     if (btnPause) btnPause.disabled = true;
   }
 
+
+  /* ═════════════════════════════════════════════════════════════
+     COMPARADOR MULTI-PROBLEMA (VRP vs. PCB vs. Markowitz)
+     ═════════════════════════════════════════════════════════════ */
+  _initComparadorCharts() {
+    const vrpData = this.pyData || window.VRP_SIMULATION_DATA || {};
+    const pcbData = this.pcbData || window.PCB_SIMULATION_DATA || {};
+    const mrkData = this.mrkData || window.MARKOWITZ_SIMULATION_DATA || {};
+
+    const vrpHist = vrpData.history || [];
+    const pcbHist = pcbData.history || [];
+    const mrkHist = mrkData.history || [];
+
+    const convCanvas = document.getElementById('comp-convergence-chart');
+    if (convCanvas) {
+      if (this.compConvergenceChart) {
+        this.compConvergenceChart.destroy();
+        this.compConvergenceChart = null;
+      }
+
+      const maxGens = Math.max(vrpHist.length, pcbHist.length, mrkHist.length, 151);
+      const labels = Array.from({ length: maxGens }, (_, i) => i);
+
+      const vrpBest = vrpHist.map(h => (typeof h.best === 'number' ? h.best : null));
+      const pcbBest = pcbHist.map(h => (typeof h.best === 'number' ? h.best : null));
+      const mrkBest = mrkHist.map(h => (typeof h.best === 'number' ? h.best : null));
+
+      this.compConvergenceChart = new Chart(convCanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'P1: VRP (Rutas — Distancia)',
+              data: vrpBest,
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              borderWidth: 2.2,
+              pointRadius: 0,
+              pointHoverRadius: 5,
+              tension: 0.25,
+              fill: false
+            },
+            {
+              label: 'P2: PCB (Circuitos — WL + Sustrato)',
+              data: pcbBest,
+              borderColor: '#38BDF8',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              borderWidth: 2.2,
+              pointRadius: 0,
+              pointHoverRadius: 5,
+              tension: 0.25,
+              fill: false
+            },
+            {
+              label: 'P3: Markowitz (Cartera — Sharpe Inverso)',
+              data: mrkBest,
+              borderColor: '#F59E0B',
+              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              borderWidth: 2.2,
+              pointRadius: 0,
+              pointHoverRadius: 5,
+              tension: 0.25,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: '#CBD5E1',
+                font: { family: "'Inter', sans-serif", size: 11, weight: '500' },
+                boxWidth: 12,
+                boxHeight: 12,
+                padding: 14
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(17, 24, 39, 0.95)',
+              titleColor: '#F8FAFC',
+              bodyColor: '#94A3B8',
+              borderColor: 'rgba(255, 255, 255, 0.12)',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: (ctx) => {
+                  const val = ctx.parsed.y;
+                  return ` ${ctx.dataset.label}: ${val !== null ? val.toFixed(5) : 'N/D'}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Generación Evolutiva (0 a 150)', color: '#64748B', font: { family: "'Inter', sans-serif", size: 10 } },
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { color: '#64748B', maxTicksLimit: 12, font: { family: "'JetBrains Mono', monospace", size: 10 } }
+            },
+            y: {
+              title: { display: true, text: 'Fitness Normalizado f_norm (Minimización)', color: '#64748B', font: { family: "'Inter', sans-serif", size: 10 } },
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { color: '#64748B', font: { family: "'JetBrains Mono', monospace", size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    const radarCanvas = document.getElementById('comp-radar-chart');
+    if (radarCanvas) {
+      if (this.compRadarChart) {
+        this.compRadarChart.destroy();
+        this.compRadarChart = null;
+      }
+
+      this.compRadarChart = new Chart(radarCanvas.getContext('2d'), {
+        type: 'radar',
+        data: {
+          labels: [
+            'Eficiencia de Convergencia',
+            'Satisfacción de Restricciones',
+            'Optimización del Objetivo',
+            'Preservación de Diversidad',
+            'Velocidad por Generación'
+          ],
+          datasets: [
+            {
+              label: 'P1: VRP (Rutas)',
+              data: [98, 100, 96, 85, 94],
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.16)',
+              borderWidth: 2,
+              pointBackgroundColor: '#10B981',
+              pointRadius: 3
+            },
+            {
+              label: 'P2: PCB (Circuitos)',
+              data: [91, 100, 94, 90, 86],
+              borderColor: '#38BDF8',
+              backgroundColor: 'rgba(56, 189, 248, 0.16)',
+              borderWidth: 2,
+              pointBackgroundColor: '#38BDF8',
+              pointRadius: 3
+            },
+            {
+              label: 'P3: Markowitz (Cartera)',
+              data: [96, 100, 98, 88, 95],
+              borderColor: '#F59E0B',
+              backgroundColor: 'rgba(245, 158, 11, 0.16)',
+              borderWidth: 2,
+              pointBackgroundColor: '#F59E0B',
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: '#CBD5E1',
+                font: { family: "'Inter', sans-serif", size: 11, weight: '500' },
+                boxWidth: 10,
+                boxHeight: 10,
+                padding: 12
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(17, 24, 39, 0.95)',
+              titleColor: '#F8FAFC',
+              bodyColor: '#94A3B8',
+              borderColor: 'rgba(255, 255, 255, 0.12)',
+              borderWidth: 1,
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw} / 100 pts`
+              }
+            }
+          },
+          scales: {
+            r: {
+              min: 50,
+              max: 100,
+              ticks: { display: false, stepSize: 10 },
+              grid: { color: 'rgba(255, 255, 255, 0.07)' },
+              angleLines: { color: 'rgba(255, 255, 255, 0.08)' },
+              pointLabels: {
+                color: '#E2E8F0',
+                font: { family: "'Inter', sans-serif", size: 10, weight: 600 }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  /* ═════════════════════════════════════════════════════════════
+     SISTEMA DE EXPANSIÓN Y MODAL DE GRÁFICAS (ENTERPRISE UX)
+     ═════════════════════════════════════════════════════════════ */
+  _bindChartModalEvents() {
+    document.querySelectorAll('[data-expand-chart]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const chartKey = btn.getAttribute('data-expand-chart');
+        this._openChartModal(chartKey);
+      });
+    });
+
+    const closeBtn = document.getElementById('modal-btn-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this._closeChartModal());
+    }
+
+    const modalBackdrop = document.getElementById('chart-modal');
+    if (modalBackdrop) {
+      modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === modalBackdrop) {
+          this._closeChartModal();
+        }
+      });
+    }
+
+    const fsBtn = document.getElementById('modal-btn-fullscreen');
+    if (fsBtn) {
+      fsBtn.addEventListener('click', () => this._toggleModalFullscreen());
+    }
+
+    const exportBtn = document.getElementById('modal-btn-export');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => this._exportModalChartPNG());
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('chart-modal');
+        if (modal && modal.classList.contains('is-open')) {
+          this._closeChartModal();
+        }
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (this.modalChart) {
+        this.modalChart.resize();
+      }
+    });
+  }
+
+  _openChartModal(chartKey) {
+    const modal = document.getElementById('chart-modal');
+    const badgeEl = document.getElementById('chart-modal-badge');
+    const titleEl = document.getElementById('chart-modal-title');
+    const statsEl = document.getElementById('chart-modal-stats');
+    const canvas = document.getElementById('modal-expanded-canvas');
+
+    if (!modal || !canvas) return;
+
+    if (this.modalChart) {
+      this.modalChart.destroy();
+      this.modalChart = null;
+    }
+
+    this.currentModalChartKey = chartKey;
+    modal.classList.add('is-open');
+
+    const vrpData = this.pyData || window.VRP_SIMULATION_DATA || {};
+    const pcbData = this.pcbData || window.PCB_SIMULATION_DATA || {};
+    const mrkData = this.mrkData || window.MARKOWITZ_SIMULATION_DATA || {};
+
+    let config = null;
+
+    if (chartKey === 'vrp-convergence') {
+      badgeEl.textContent = 'Problema 1: VRP';
+      titleEl.textContent = 'Curva de Convergencia Generacional — Rutas de Entrega';
+      const hist = vrpData.history || [];
+      statsEl.innerHTML = `
+        <span><b>Generaciones:</b> 150</span>
+        <span><b>Mejor Fitness:</b> 0.37825</span>
+        <span><b>Distancia Final:</b> 429.8 km</span>
+        <span><b>Camiones:</b> 3 (100% Factible)</span>
+      `;
+
+      config = {
+        type: 'line',
+        data: {
+          labels: hist.map(h => h.gen),
+          datasets: [
+            {
+              label: 'Mejor Individuo (f_norm)',
+              data: hist.map(h => h.best),
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: 'Promedio Poblacional',
+              data: hist.map(h => h.avg),
+              borderColor: '#38BDF8',
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: 'Peor Individuo',
+              data: hist.map(h => h.worst),
+              borderColor: '#EF4444',
+              borderWidth: 1,
+              pointRadius: 0,
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: '#E2E8F0', font: { family: "'Inter', sans-serif", size: 12 } } },
+            tooltip: { backgroundColor: 'rgba(17,24,39,0.95)', titleColor: '#fff', bodyColor: '#cbd5e1' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Generación', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+            y: { title: { display: true, text: 'Fitness Normalizado (f_norm)', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      };
+    } else if (chartKey === 'pcb-convergence') {
+      badgeEl.textContent = 'Problema 2: PCB';
+      titleEl.textContent = 'Curva de Convergencia Generacional — Diseño de Circuitos PCB';
+      const hist = pcbData.history || [];
+      statsEl.innerHTML = `
+        <span><b>Generaciones:</b> 150</span>
+        <span><b>Mejor Fitness:</b> 0.67591</span>
+        <span><b>Wirelength:</b> 1080.2 mm</span>
+        <span><b>Área Sustrato:</b> 3167.7 mm² (-60.4%)</span>
+      `;
+
+      config = {
+        type: 'line',
+        data: {
+          labels: hist.map(h => h.gen),
+          datasets: [
+            {
+              label: 'Mejor Individuo (f_norm)',
+              data: hist.map(h => h.best),
+              borderColor: '#38BDF8',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: 'Promedio Poblacional',
+              data: hist.map(h => h.avg),
+              borderColor: '#818CF8',
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: 'Peor Individuo',
+              data: hist.map(h => h.worst),
+              borderColor: '#EF4444',
+              borderWidth: 1,
+              pointRadius: 0,
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: '#E2E8F0', font: { family: "'Inter', sans-serif", size: 12 } } },
+            tooltip: { backgroundColor: 'rgba(17,24,39,0.95)', titleColor: '#fff', bodyColor: '#cbd5e1' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Generación', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+            y: { title: { display: true, text: 'Fitness Multicriterio Penalizado', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      };
+    } else if (chartKey === 'mrk-frontier') {
+      badgeEl.textContent = 'Problema 3: Markowitz';
+      titleEl.textContent = 'Frontera Eficiente de Markowitz y Asignación Óptima de Activos';
+      statsEl.innerHTML = `
+        <span><b>Retorno E[Rp]:</b> 14.78% anual</span>
+        <span><b>Volatilidad σp:</b> 14.56% anual</span>
+        <span><b>Sharpe Ratio:</b> 0.7744</span>
+        <span><b>Activos:</b> 10 Globales</span>
+      `;
+
+      const cloud = (mrkData.monte_carlo_cloud || []).map(p => ({ x: p.volatility_pct, y: p.return_pct }));
+      const assets = (mrkData.instance?.assets || []).map(a => ({ x: a.volatility * 100, y: a.expected_return * 100, label: a.ticker }));
+
+      config = {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'Nube Monte Carlo (5000 Portafolios)',
+              data: cloud,
+              backgroundColor: 'rgba(148, 163, 184, 0.25)',
+              pointRadius: 2,
+              pointHoverRadius: 4
+            },
+            {
+              label: 'Activos Individuales (10 Sectores)',
+              data: assets,
+              backgroundColor: '#06B6D4',
+              borderColor: '#FFFFFF',
+              borderWidth: 1.5,
+              pointRadius: 6,
+              pointHoverRadius: 8
+            },
+            {
+              label: 'Portafolio Óptimo SGA (Sharpe Max)',
+              data: [{ x: 14.56, y: 14.78 }],
+              backgroundColor: '#10B981',
+              borderColor: '#FFFFFF',
+              borderWidth: 2,
+              pointRadius: 9,
+              pointHoverRadius: 11
+            },
+            {
+              label: 'Línea de Asignación de Capital (CAL)',
+              data: [
+                { x: 0, y: 3.50 },
+                { x: 25.0, y: 3.50 + 0.7744 * 25.0 }
+              ],
+              type: 'line',
+              borderColor: '#38BDF8',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#E2E8F0', font: { family: "'Inter', sans-serif", size: 12 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const pt = ctx.raw;
+                  return ` ${ctx.dataset.label}: Vol=${pt.x.toFixed(2)}%, Ret=${pt.y.toFixed(2)}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Riesgo / Volatilidad Anualizada σ (%)', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+            y: { title: { display: true, text: 'Rendimiento Esperado Anual E[R] (%)', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      };
+    } else if (chartKey === 'mrk-convergence') {
+      badgeEl.textContent = 'Problema 3: Markowitz';
+      titleEl.textContent = 'Curva de Convergencia del SGA — Optimización de Cartera de Inversiones';
+      const hist = mrkData.history || [];
+      statsEl.innerHTML = `
+        <span><b>Generaciones:</b> 150</span>
+        <span><b>Fitness Final:</b> 0.43348</span>
+        <span><b>Presupuesto:</b> 100.68% (0 violaciones)</span>
+        <span><b>Tope Máx:</b> 35.0% respetado</span>
+      `;
+
+      config = {
+        type: 'line',
+        data: {
+          labels: hist.map(h => h.gen),
+          datasets: [
+            {
+              label: 'Mejor Individuo (f_loss)',
+              data: hist.map(h => h.best),
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: 'Promedio Poblacional',
+              data: hist.map(h => h.avg),
+              borderColor: '#38BDF8',
+              borderWidth: 1.5,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              tension: 0.2
+            },
+            {
+              label: 'Peor Individuo',
+              data: hist.map(h => h.worst),
+              borderColor: '#EF4444',
+              borderWidth: 1,
+              pointRadius: 0,
+              tension: 0.2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: '#E2E8F0', font: { family: "'Inter', sans-serif", size: 12 } } }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Generación', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+            y: { title: { display: true, text: 'Función de Pérdida Penalizada f_loss', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      };
+    } else if (chartKey === 'comp-convergence') {
+      badgeEl.textContent = 'Comparativa Global';
+      titleEl.textContent = 'Convergencia Comparativa Transversal — 3 Problemas de Ingeniería';
+      statsEl.innerHTML = `
+        <span><b>VRP:</b> f_norm 0.37825</span>
+        <span><b>PCB:</b> f_norm 0.67591</span>
+        <span><b>Markowitz:</b> f_norm 0.43348</span>
+        <span><b>Población N:</b> 1000 c/u</span>
+      `;
+
+      const vrpHist = vrpData.history || [];
+      const pcbHist = pcbData.history || [];
+      const mrkHist = mrkData.history || [];
+      const maxGens = Math.max(vrpHist.length, pcbHist.length, mrkHist.length, 151);
+
+      config = {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: maxGens }, (_, i) => i),
+          datasets: [
+            {
+              label: 'P1: VRP (Rutas — Distancia)',
+              data: vrpHist.map(h => h.best),
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.25
+            },
+            {
+              label: 'P2: PCB (Circuitos — WL + Sustrato)',
+              data: pcbHist.map(h => h.best),
+              borderColor: '#38BDF8',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.25
+            },
+            {
+              label: 'P3: Markowitz (Cartera — Sharpe Inverso)',
+              data: mrkHist.map(h => h.best),
+              borderColor: '#F59E0B',
+              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              tension: 0.25
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: '#E2E8F0', font: { family: "'Inter', sans-serif", size: 12 } } },
+            tooltip: {
+              backgroundColor: 'rgba(17,24,39,0.95)',
+              titleColor: '#fff',
+              bodyColor: '#cbd5e1',
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(5) : 'N/D'}`
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Generación', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+            y: { title: { display: true, text: 'Fitness Normalizado f_norm', color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      };
+    }
+
+    if (config) {
+      setTimeout(() => {
+        this.modalChart = new Chart(canvas.getContext('2d'), config);
+        this.modalChart.resize();
+      }, 50);
+    }
+  }
+
+  _closeChartModal() {
+    const modal = document.getElementById('chart-modal');
+    if (modal) {
+      modal.classList.remove('is-open');
+    }
+    const card = document.querySelector('.chart-modal-card');
+    if (card) {
+      card.classList.remove('is-fullscreen');
+    }
+    const fsText = document.getElementById('modal-fs-text');
+    if (fsText) fsText.textContent = 'Maximizar';
+
+    if (this.modalChart) {
+      this.modalChart.destroy();
+      this.modalChart = null;
+    }
+  }
+
+  _toggleModalFullscreen() {
+    const card = document.querySelector('.chart-modal-card');
+    const fsText = document.getElementById('modal-fs-text');
+    if (!card) return;
+
+    card.classList.toggle('is-fullscreen');
+    const isFs = card.classList.contains('is-fullscreen');
+    if (fsText) {
+      fsText.textContent = isFs ? 'Restaurar' : 'Maximizar';
+    }
+    setTimeout(() => {
+      if (this.modalChart) {
+        this.modalChart.resize();
+      }
+    }, 150);
+  }
+
+  _exportModalChartPNG() {
+    if (!this.modalChart) return;
+    const key = this.currentModalChartKey || 'grafica';
+    const link = document.createElement('a');
+    link.download = `nexusopt_${key}_${new Date().toISOString().slice(0,10)}.png`;
+    link.href = this.modalChart.toBase64Image('image/png', 1.0);
+    link.click();
+  }
   _renderMarkowitzTopTable(individuals) {
     const tbody = document.getElementById('markowitz-top-tbody');
     if (!tbody) return;
@@ -3298,7 +3973,7 @@ class DashboardController {
 document.addEventListener('DOMContentLoaded', () => {
   // Chart.js debe estar cargado (CDN en index.html)
   if (typeof Chart === 'undefined') {
-    console.error('[EvoSuite] Chart.js no encontrado. Verificar CDN en index.html.');
+    console.error('[NexusOpt] Chart.js no encontrado. Verificar CDN en index.html.');
     return;
   }
 
@@ -3310,7 +3985,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window._dashboard = new DashboardController();
   window.app = window._dashboard;
 
-  console.log('[EvoSuite AI] Dashboard inicializado. Motor SGA listo.');
-  console.log('[EvoSuite AI] Instancia VRP: 15 clientes, 3 camiones, cap=120kg.');
-  console.log('[EvoSuite AI] Caso base cátedra: N=1000, e=2, Pc=90%, Pm=2%, maxGens=150.');
+  console.log('[NexusOpt AI] Dashboard inicializado. Motor SGA listo.');
+  console.log('[NexusOpt AI] Instancia VRP: 15 clientes, 3 camiones, cap=120kg.');
+  console.log('[NexusOpt AI] Caso base cátedra: N=1000, e=2, Pc=90%, Pm=2%, maxGens=150.');
 });
