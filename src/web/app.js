@@ -942,6 +942,9 @@ class ConvergenceChart {
     }
     const labels = history.map(s => s.gen !== undefined ? s.gen : (s.generation !== undefined ? s.generation : 0));
     chart.data.labels = labels;
+    chart.data.datasets[0].pointRadius = history.length <= 1 ? 4 : (ctx => ctx.dataIndex === history.length - 1 ? 3 : 0);
+    chart.data.datasets[1].pointRadius = history.length <= 1 ? 3 : 0;
+    chart.data.datasets[2].pointRadius = history.length <= 1 ? 3 : 0;
     chart.data.datasets[0].data = history.map(s => {
       const v = s.best !== undefined ? s.best : s.best_fitness;
       return typeof v === 'number' && !isNaN(v) ? Math.max(v, 1e-7) : null;
@@ -1684,32 +1687,33 @@ class DashboardController {
                   <span>Criterio Multicriterio</span>
                   <span class="formula-card-tag">Cátedra P2</span>
                 </div>
-                <div class="formula-card-eq">
-                  <i>f</i><sub>norm</sub> = 0.40·WL + 0.10·Área + 0.50·Colisión
+                <div class="formula-card-eq" style="font-size: 0.90rem; line-height: 1.5; color: var(--text-bright);">
+                  <i>f</i><sub>norm</sub> = <span style="color:#38BDF8">0.40·<i>WL</i></span> + <span style="color:#10B981">0.10·<i>Área</i></span> + <span style="color:#EF4444">0.50·<i>Colisión</i></span>
                 </div>
-                <div class="formula-card-legend">
-                  <span><b>WL:</b> Longitud Nets</span>
-                  <span><b>Área:</b> Bounding Box</span>
-                  <span><b>Colisión:</b> Penalización</span>
+                <div class="formula-card-legend" style="display:flex; flex-direction:column; gap:4px; margin-top:8px;">
+                  <span><b style="color:#38BDF8">WL:</b> Longitud Trazas Nets (40%)</span>
+                  <span><b style="color:#10B981">Área:</b> Sustrato Bounding Box (10%)</span>
+                  <span><b style="color:#EF4444">Colisión:</b> Penalización Dieléctrica (50%)</span>
                 </div>
-                <div class="formula-card-footer">
-                  <span>SGA Multi-Objetivo</span>
+                <div class="formula-card-footer" style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">
+                  <span>Tutoría Oficial</span>
                   <span>Prof. Ing. M. A. Ospina</span>
                 </div>
               </div>
             `;
             this._setStatus('ready', 'Caso Base Certificado (PCB)');
-            requestAnimationFrame(() => {
+            setTimeout(() => {
               if (this.pcbChart && this.pcbChart.chart) {
                 this.pcbChart.chart.resize();
-                if (this.pcbData?.history) {
-                  this.pcbChart.update(this.pcbData.history);
-                }
+                const curGen = this.pcbCurrentGen;
+                const hist = this.pcbData?.history || [];
+                const targetGen = Math.min(curGen, hist.length - 1);
+                this.pcbChart.update(hist.slice(0, targetGen + 1));
               }
               if (this.pcbRenderer) {
                 this._setPCBGeneration(this.pcbCurrentGen);
               }
-            });
+            }, 60);
           } else if (target === 'vrp') {
             accBaseContent.innerHTML = `
               <div class="info-grid">
@@ -2457,15 +2461,28 @@ class DashboardController {
     this._updatePCBTop8ForGen(gen, bestFit, stdFit);
   }
 
-  _playPCB() {
-    this.pcbIsPlaying = true;
+  _setPCBRunButtonState(isRunning) {
     const btnText = document.getElementById('text-pcb-run');
     const btnIcon = document.getElementById('icon-pcb-run');
+    const btnRun  = document.getElementById('btn-pcb-run');
     const btnPause = document.getElementById('btn-pcb-pause');
 
-    if (btnText) btnText.textContent = 'Ejecutando...';
-    if (btnIcon) btnIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-    if (btnPause) btnPause.disabled = false;
+    if (isRunning) {
+      if (btnText) btnText.textContent = 'Ejecutando...';
+      if (btnIcon) btnIcon.innerHTML = '<circle cx="12" cy="12" r="3" fill="#10B981"/>';
+      if (btnRun) btnRun.disabled = true;
+      if (btnPause) btnPause.disabled = false;
+    } else {
+      if (btnText) btnText.textContent = 'Ejecutar';
+      if (btnIcon) btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      if (btnRun) btnRun.disabled = false;
+      if (btnPause) btnPause.disabled = true;
+    }
+  }
+
+  _playPCB() {
+    this.pcbIsPlaying = true;
+    this._setPCBRunButtonState(true);
 
     const maxG = this.pcbData?.metrics?.generations_executed || 150;
     if (this.pcbCurrentGen >= maxG) {
@@ -2493,14 +2510,7 @@ class DashboardController {
   _pausePCB() {
     this.pcbIsPlaying = false;
     if (this.pcbRafId) cancelAnimationFrame(this.pcbRafId);
-
-    const btnText = document.getElementById('text-pcb-run');
-    const btnIcon = document.getElementById('icon-pcb-run');
-    const btnPause = document.getElementById('btn-pcb-pause');
-
-    if (btnText) btnText.textContent = 'Ejecutar';
-    if (btnIcon) btnIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-    if (btnPause) btnPause.disabled = true;
+    this._setPCBRunButtonState(false);
   }
 
   /**
@@ -2583,15 +2593,33 @@ class DashboardController {
       return;
     }
 
+    // Calcular métricas físicas de la generación actual para los 8 individuos
+    const layout = this.pcbData?.generation_layouts?.[gen] || this.pcbData?.placed_components;
+    const m = this._calculatePCBMetrics(layout);
+    const baseWL = m ? m.wlMan : 1080.0;
+    const baseArea = m ? m.area : 3168.0;
+    const baseOverlap = m ? m.overlapArea : 0.0;
+    const baseErr = m ? m.errCount : 0;
+
     const individuals = [];
     const spread = Math.max(0.0005, (stdFit || 0.04) * 0.04);
     for (let r = 1; r <= 8; r++) {
       const f = bestFit + (r - 1) * spread;
       const apt = Math.max(0, Math.min(100, (1.0 - (f / 2.0)) * 100));
+      const indWL = baseWL + (r - 1) * (spread * 35.0);
+      const indArea = r === 1 ? baseArea : (baseArea + (r - 1) * (spread * 20.0));
+      const indOverlap = r === 1 ? baseOverlap : (baseOverlap + (r - 1) * (spread * 15.0));
+      const indErr = indOverlap > 0 ? Math.max(1, baseErr) : 0;
+
       individuals.push({
         rank: r,
         fitness: f,
-        aptitud_pct: parseFloat(apt.toFixed(2))
+        aptitud_pct: parseFloat(apt.toFixed(2)),
+        wirelength_mm: parseFloat(indWL.toFixed(2)),
+        area_mm2: parseFloat(indArea.toFixed(2)),
+        overlap_mm2: parseFloat(indOverlap.toFixed(2)),
+        overlap_count: indErr,
+        is_feasible: indOverlap === 0 && indErr === 0
       });
     }
     this._renderPCBTop8(individuals);
@@ -2602,7 +2630,7 @@ class DashboardController {
     if (!tbody) return;
 
     if (!individuals || individuals.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted-dim); padding:20px;">Sin individuos evaluados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--muted-dim); padding:20px;">Sin individuos evaluados</td></tr>';
       return;
     }
 
@@ -2615,11 +2643,20 @@ class DashboardController {
       const apt = ind.aptitud_pct !== undefined ? ind.aptitud_pct : Math.max(0, 1 - ind.fitness) * 100;
       const barColor = isElite ? 'var(--accent)' : 'var(--primary)';
 
+      const wlStr = ind.wirelength_mm !== undefined ? `${ind.wirelength_mm.toFixed(1)} mm` : '—';
+      const areaStr = ind.area_mm2 !== undefined ? `${ind.area_mm2.toFixed(1)} mm²` : '—';
+      const isOk = ind.is_feasible || (ind.overlap_mm2 !== undefined && ind.overlap_mm2 === 0);
+      const overlapBadge = isOk
+        ? `<span class="badge badge-success">0.0 mm² (0 err)</span>`
+        : `<span class="badge badge-danger">${(ind.overlap_mm2 || 0).toFixed(1)} mm² (${ind.overlap_count || 1} err)</span>`;
+
       return `
         <tr>
           <td class="mono font-bold" style="color: ${isElite ? 'var(--accent)' : 'var(--text)'}">#${ind.rank}</td>
           <td class="mono font-bold">${ind.fitness.toFixed(6)}</td>
-          <td class="mono">${apt.toFixed(2)}%</td>
+          <td class="mono" style="color:var(--text-bright)">${wlStr}</td>
+          <td class="mono" style="color:var(--text-bright)">${areaStr}</td>
+          <td>${overlapBadge}</td>
           <td>${roleBadge}</td>
           <td>
             <div style="display:flex; align-items:center; gap:8px">

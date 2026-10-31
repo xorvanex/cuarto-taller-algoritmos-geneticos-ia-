@@ -785,16 +785,18 @@
           <table aria-label="Mejores individuos de la generación actual en PCB">
             <thead>
               <tr>
-                <th scope="col" style="width: 10%;">Rango</th>
-                <th scope="col" style="width: 20%;">Fitness (Norm.)</th>
-                <th scope="col" style="width: 20%;">Aptitud Biológica</th>
-                <th scope="col" style="width: 25%;">Rol Evolutivo</th>
-                <th scope="col" style="width: 25%;">Barra de Aptitud</th>
+                <th scope="col" style="width: 8%;">Rango</th>
+                <th scope="col" style="width: 14%;">Fitness (Norm.)</th>
+                <th scope="col" style="width: 16%;">Longitud Pistas (WL)</th>
+                <th scope="col" style="width: 16%;">Área Envolvente</th>
+                <th scope="col" style="width: 16%;">Solapamientos</th>
+                <th scope="col" style="width: 15%;">Rol Evolutivo</th>
+                <th scope="col" style="width: 15%;">Barra de Aptitud</th>
               </tr>
             </thead>
             <tbody id="pop-pcb-tbody">
               <tr>
-                <td colspan="5" style="text-align:center; color:var(--muted-dim); padding:20px; font-family:var(--font-mono); font-size:0.8rem">
+                <td colspan="7" style="text-align:center; color:var(--muted-dim); padding:20px; font-family:var(--font-mono); font-size:0.8rem">
                   Cargando población de circuitos evaluada...
                 </td>
               </tr>
@@ -848,8 +850,7 @@
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
             <span>
-              <strong>Fundamento Algorítmico (Problema 2 — PCB Layout):</strong> Cada individuo representa las coordenadas continuas $(x_i, y_i) \in [0, 1]$ de los 14 componentes electrónicos mapeados al sustrato físico de $100 	imes 80	ext{ mm}$. El <em>Algoritmo Genético Simple</em> aplica Cruce de Un Solo Punto (SPX, $P_c = 90\%$) y Mutación Puntual ($P_m = 2\%$). Las soluciones con colisiones físicas entre componentes sufren una fuerte penalización en la función de aptitud, forzando al algoritmo a converger a soluciones 100% factibles (0 solapamientos) antes de optimizar la longitud Manhattan de las 22 pistas de cobre y compactar el área envolvente.
-            </span>
+              <strong>Fundamento Algorítmico (Problema 2 — PCB Layout):</strong> Cada individuo representa las coordenadas continuas <i>(x<sub>i</sub>, y<sub>i</sub>)</i> ∈ [0, 1] de los 14 componentes electrónicos mapeados al sustrato físico de 100 × 80 mm. El <em>Algoritmo Genético Simple</em> aplica Cruce de Un Solo Punto (SPX, <i>P<sub>c</sub></i> = 90%) y Mutación Puntual (<i>P<sub>m</sub></i> = 2%). Las soluciones con colisiones físicas entre componentes sufren una fuerte penalización en la función de aptitud, forzando al algoritmo a converger a soluciones 100% factibles (0 solapamientos) antes de optimizar la longitud Manhattan de las 22 pistas de cobre y compactar el área envolvente.</span>
           </div>
         </div>
 

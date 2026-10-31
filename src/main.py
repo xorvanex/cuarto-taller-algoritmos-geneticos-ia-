@@ -453,6 +453,11 @@ def export_pcb_results(
                 "rank": rank + 1,
                 "fitness": round(float(result.final_fitness[idx]), 6),
                 "aptitud_pct": round(float(max(0.0, 1.0 - result.final_fitness[idx]) * 100), 2),
+                "wirelength_mm": round(float(model.decode_chromosome(result.final_population[idx]).manhattan_wirelength_mm), 2),
+                "area_mm2": round(float(model.decode_chromosome(result.final_population[idx]).bounding_box_area_mm2), 2),
+                "overlap_mm2": round(float(model.decode_chromosome(result.final_population[idx]).total_overlap_area_mm2), 2),
+                "overlap_count": int(model.decode_chromosome(result.final_population[idx]).overlap_count),
+                "is_feasible": bool(model.decode_chromosome(result.final_population[idx]).is_feasible),
                 "chromosome_sample": [round(float(g), 2) for g in result.final_population[idx][:6]],
             }
             for rank, idx in enumerate(np.argsort(result.final_fitness)[:8])
