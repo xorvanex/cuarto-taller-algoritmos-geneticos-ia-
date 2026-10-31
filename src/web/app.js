@@ -1406,6 +1406,216 @@ class PCBRenderer {
   }
 }
 
+
+/* ════════════════════════════════════════════════════════════
+   12. PROBLEMA 3: MARKOWITZ — Frontera Eficiente y Distribución
+   ════════════════════════════════════════════════════════════ */
+
+const MARKOWITZ_PY_DATA = typeof window !== 'undefined' && window.MARKOWITZ_SIMULATION_DATA ? window.MARKOWITZ_SIMULATION_DATA : null;
+
+class MarkowitzFrontierChart {
+  constructor(canvasOrId) {
+    const el = typeof canvasOrId === 'string' ? document.getElementById(canvasOrId) : canvasOrId;
+    this.ctx = el ? el.getContext('2d') : null;
+    this.chart = null;
+    if (this.ctx) this._init();
+  }
+
+  _init() {
+    this.chart = new Chart(this.ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: 'Portafolios Factibles (Monte Carlo)',
+            data: [],
+            backgroundColor: 'rgba(148, 163, 184, 0.35)',
+            pointRadius: 2.5,
+            pointHoverRadius: 4,
+            borderColor: 'transparent',
+            order: 3
+          },
+          {
+            label: 'Línea Asignación Capital (CAL)',
+            type: 'line',
+            data: [],
+            borderColor: '#38BDF8',
+            borderWidth: 1.8,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false,
+            order: 2
+          },
+          {
+            label: 'Activos Individuales',
+            data: [],
+            backgroundColor: (ctx) => ctx.raw?.color || '#EF4444',
+            borderColor: '#FFFFFF',
+            borderWidth: 1.2,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            order: 1
+          },
+          {
+            label: 'Portafolio Óptimo SGA',
+            data: [],
+            backgroundColor: '#10B981',
+            borderColor: '#FFFFFF',
+            borderWidth: 2,
+            pointRadius: 10,
+            pointHoverRadius: 12,
+            pointStyle: 'star',
+            order: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 150 },
+        scales: {
+          x: {
+            title: { display: true, text: 'Riesgo / Volatilidad sigma_p (%)', color: '#94A3B8', font: { size: 10 } },
+            min: 5,
+            max: 25,
+            grid: { color: 'rgba(51, 65, 85, 0.4)' },
+            ticks: { color: '#94A3B8', callback: v => v + '%' }
+          },
+          y: {
+            title: { display: true, text: 'Rendimiento Esperado E[Rp] (%)', color: '#94A3B8', font: { size: 10 } },
+            min: 3,
+            max: 21,
+            grid: { color: 'rgba(51, 65, 85, 0.4)' },
+            ticks: { color: '#94A3B8', callback: v => v + '%' }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const r = ctx.raw;
+                if (ctx.datasetIndex === 0) {
+                  return `Portafolio: Retorno ${r.y}% | Vol ${r.x}% | SR: ${r.sharpe}`;
+                } else if (ctx.datasetIndex === 2) {
+                  return `${r.ticker}: Retorno ${r.y}% | Vol ${r.x}%`;
+                } else if (ctx.datasetIndex === 3) {
+                  return `Óptimo SGA: Retorno ${r.y}% | Vol ${r.x}% | SR: ${r.sharpe}`;
+                }
+                return `CAL`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  setData(cloud, assets, currentPortfolio, rf = 3.5) {
+    if (!this.chart) return;
+    this.chart.data.datasets[0].data = (cloud || []).map(p => ({ x: p.vol, y: p.ret, sharpe: p.sharpe }));
+    if (currentPortfolio && currentPortfolio.volatility > 0) {
+      const slope = (currentPortfolio.expected_return - rf) / currentPortfolio.volatility;
+      this.chart.data.datasets[1].data = [
+        { x: 0, y: rf },
+        { x: 25, y: +(rf + slope * 25).toFixed(2) }
+      ];
+    }
+    this.chart.data.datasets[2].data = (assets || []).map(a => ({
+      x: +(a.volatility * 100).toFixed(2),
+      y: +(a.expected_return * 100).toFixed(2),
+      ticker: a.ticker,
+      color: a.color
+    }));
+    if (currentPortfolio) {
+      this.chart.data.datasets[3].data = [{
+        x: currentPortfolio.volatility,
+        y: currentPortfolio.expected_return,
+        sharpe: currentPortfolio.sharpe_ratio
+      }];
+    }
+    this.chart.update('none');
+  }
+
+  updateCurrentPoint(portfolio, rf = 3.5) {
+    if (!this.chart || !portfolio) return;
+    this.chart.data.datasets[3].data = [{
+      x: portfolio.volatility,
+      y: portfolio.expected_return,
+      sharpe: portfolio.sharpe_ratio
+    }];
+    if (portfolio.volatility > 0) {
+      const slope = (portfolio.expected_return - rf) / portfolio.volatility;
+      this.chart.data.datasets[1].data = [
+        { x: 0, y: rf },
+        { x: 25, y: +(rf + slope * 25).toFixed(2) }
+      ];
+    }
+    this.chart.update('none');
+  }
+}
+
+class MarkowitzAllocationChart {
+  constructor(canvasOrId) {
+    const el = typeof canvasOrId === 'string' ? document.getElementById(canvasOrId) : canvasOrId;
+    this.ctx = el ? el.getContext('2d') : null;
+    this.chart = null;
+    if (this.ctx) this._init();
+  }
+
+  _init() {
+    this.chart = new Chart(this.ctx, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Asignación (%)',
+          data: [],
+          backgroundColor: [],
+          borderRadius: 4,
+          borderWidth: 1,
+          borderColor: '#1E293B'
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: 'Ponderación Patrimonial (%)', color: '#94A3B8', font: { size: 10 } },
+            min: 0,
+            max: 38,
+            grid: { color: 'rgba(51, 65, 85, 0.4)' },
+            ticks: { color: '#94A3B8', callback: v => v + '%' }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: '#F1F5F9', font: { weight: 'bold', size: 10 } }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `Peso: ${ctx.parsed.x.toFixed(2)}%`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  updateAllocations(allocations) {
+    if (!this.chart || !allocations) return;
+    const sorted = [...allocations].sort((a, b) => b.pct - a.pct);
+    this.chart.data.labels = sorted.map(a => a.ticker);
+    this.chart.data.datasets[0].data = sorted.map(a => a.pct);
+    this.chart.data.datasets[0].backgroundColor = sorted.map(a => a.color || '#3B82F6');
+    this.chart.update('none');
+  }
+}
+
 class DashboardController {
   constructor() {
     /* Instancias de motor, renderer y chart */
@@ -1430,6 +1640,7 @@ class DashboardController {
 
     this._init();
     this._initPCB();
+    this._initMarkowitz();
   }
 
   /* ── Inicialización ──────────────────────────────────────── */
@@ -1714,7 +1925,70 @@ class DashboardController {
                 this._setPCBGeneration(this.pcbCurrentGen);
               }
             }, 60);
-          } else if (target === 'vrp') {
+                    } else if (target === 'markowitz') {
+            accBaseContent.innerHTML = `
+              <div class="info-grid">
+                <div class="info-chip">
+                  <div class="info-chip-label">Activos</div>
+                  <div class="info-chip-value">10</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Tasa Rf</div>
+                  <div class="info-chip-value">3.50%</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Tope Activo</div>
+                  <div class="info-chip-value">35.0%</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Retorno E[R]</div>
+                  <div class="info-chip-value">14.78%</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Volatilidad</div>
+                  <div class="info-chip-value">14.56%</div>
+                </div>
+                <div class="info-chip">
+                  <div class="info-chip-label">Sharpe SR</div>
+                  <div class="info-chip-value">0.7744</div>
+                </div>
+              </div>
+              <div class="formula-card">
+                <div class="formula-card-header">
+                  <span>Criterio Multicriterio</span>
+                  <span class="formula-card-tag">Cátedra P3</span>
+                </div>
+                <div class="formula-card-eq" style="font-size: 0.90rem; line-height: 1.5; color: var(--text-bright);">
+                  <i>f</i><sub>norm</sub> = <span style="color:#EF4444">0.50·<i>Riesgo</i></span> + <span style="color:#10B981">0.50·(1 - <i>Retorno</i>)</span> + <span style="color:#38BDF8">Penalización</span>
+                </div>
+                <div class="formula-card-legend" style="display:flex; flex-direction:column; gap:4px; margin-top:8px;">
+                  <span><b style="color:#EF4444">Riesgo:</b> Volatilidad sigma_p / sigma_max (50%)</span>
+                  <span><b style="color:#10B981">Retorno:</b> Desutilidad de retorno medio (50%)</span>
+                  <span><b style="color:#38BDF8">Penalización:</b> Presupuesto unitario y cota 35%</span>
+                </div>
+                <div class="formula-card-footer" style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">
+                  <span>Tutoría Oficial</span>
+                  <span>Prof. Ing. M. A. Ospina</span>
+                </div>
+              </div>
+            `;
+            this._setStatus('ready', 'Caso Base Certificado (Markowitz)');
+            setTimeout(() => {
+              if (this.mrkConvergenceChart && this.mrkConvergenceChart.chart) {
+                this.mrkConvergenceChart.chart.resize();
+                const curGen = this.mrkCurrentGen;
+                const hist = this.mrkData?.history || [];
+                const targetGen = Math.min(curGen, hist.length - 1);
+                this.mrkConvergenceChart.update(hist.slice(0, targetGen + 1));
+              }
+              if (this.mrkFrontierChart && this.mrkFrontierChart.chart) {
+                this.mrkFrontierChart.chart.resize();
+              }
+              if (this.mrkAllocationChart && this.mrkAllocationChart.chart) {
+                this.mrkAllocationChart.chart.resize();
+              }
+            }, 60);
+} else if (target === 'vrp') {
             accBaseContent.innerHTML = `
               <div class="info-grid">
                 <div class="info-chip">
@@ -2693,11 +2967,237 @@ class DashboardController {
     }).join('');
   }
 
-}
+  /* ════════════════════════════════════════════════════════════
+     MÉTODO DE INICIALIZACIÓN MARKOWITZ (Problema 3)
+     ════════════════════════════════════════════════════════════ */
+  _initMarkowitz() {
+    this.mrkData = MARKOWITZ_PY_DATA;
+    this.mrkFrontierChart = new MarkowitzFrontierChart('markowitz-frontier-chart');
+    this.mrkAllocationChart = new MarkowitzAllocationChart('markowitz-allocation-chart');
+    this.mrkConvergenceChart = new ConvergenceChart('markowitz-convergence-chart');
+    if (this.mrkConvergenceChart) {
+      this.mrkConvergenceChart.setMaxGens(150);
+    }
 
-/* ════════════════════════════════════════════════════════════
-   10. INICIO — Esperar al DOM y a Chart.js
-   ════════════════════════════════════════════════════════════ */
+    this.mrkCurrentGen = 150;
+    this.mrkIsPlaying = false;
+    this.mrkRafId = null;
+
+    this._bindMarkowitzEvents();
+
+    if (this.mrkData) {
+      this._loadMarkowitzCertifiedData();
+    }
+  }
+
+  _bindMarkowitzEvents() {
+    // Timeline slider Markowitz
+    const mrkSlider = document.getElementById('timeline-mrk-slider');
+    if (mrkSlider) {
+      mrkSlider.addEventListener('input', () => {
+        if (this.mrkIsPlaying) this._pauseMarkowitz();
+        const gen = parseInt(mrkSlider.value, 10);
+        this._setMarkowitzGeneration(gen);
+      });
+    }
+
+    // Botones de control Markowitz
+    const btnRun = document.getElementById('btn-mrk-run');
+    if (btnRun) {
+      btnRun.addEventListener('click', () => {
+        if (this.mrkIsPlaying) {
+          this._pauseMarkowitz();
+        } else {
+          this._playMarkowitz();
+        }
+      });
+    }
+
+    const btnPause = document.getElementById('btn-mrk-pause');
+    if (btnPause) {
+      btnPause.addEventListener('click', () => this._pauseMarkowitz());
+    }
+
+    const btnStep = document.getElementById('btn-mrk-step');
+    if (btnStep) {
+      btnStep.addEventListener('click', () => {
+        this._pauseMarkowitz();
+        const maxG = this.mrkData?.metrics?.generations_executed || 150;
+        const nextG = Math.min(this.mrkCurrentGen + 1, maxG);
+        this._setMarkowitzGeneration(nextG);
+      });
+    }
+
+    const btnRestore = document.getElementById('btn-mrk-restore');
+    if (btnRestore) {
+      btnRestore.addEventListener('click', () => {
+        this._pauseMarkowitz();
+        const maxG = this.mrkData?.metrics?.generations_executed || 150;
+        this._setMarkowitzGeneration(maxG);
+      });
+    }
+  }
+
+  _loadMarkowitzCertifiedData() {
+    const d = this.mrkData;
+    if (!d) return;
+
+    // Inicializar nube Monte Carlo, activos y óptimo
+    const optPort = d.generation_portfolios ? d.generation_portfolios[d.generation_portfolios.length - 1] : null;
+    this.mrkFrontierChart.setData(d.monte_carlo_cloud, d.instance?.assets, optPort, (d.instance?.risk_free_rate || 0.035) * 100);
+
+    // Inicializar asignación patrimonial
+    if (optPort) {
+      this.mrkAllocationChart.updateAllocations(optPort.allocations);
+    }
+
+    // Inicializar convergencia
+    if (d.history && this.mrkConvergenceChart) {
+      this.mrkConvergenceChart.update(d.history);
+    }
+
+    // Renderizar tabla Top 8
+    this._renderMarkowitzTopTable(d.top_individuals || []);
+
+    // Actualizar KPIs al estado final
+    this._setMarkowitzGeneration(150);
+  }
+
+  _setMarkowitzGeneration(gen) {
+    if (!this.mrkData) return;
+    this.mrkCurrentGen = gen;
+
+    // Actualizar slider y etiqueta
+    const slider = document.getElementById('timeline-mrk-slider');
+    if (slider) slider.value = gen;
+
+    const label = document.getElementById('timeline-mrk-val');
+    if (label) label.innerHTML = `Gen <strong>${gen}</strong> / 150`;
+
+    // Obtener portafolio de esa generación
+    const port = this.mrkData.generation_portfolios ? this.mrkData.generation_portfolios[gen] : null;
+    if (port) {
+      // Actualizar KPIs
+      const elRet = document.getElementById('kpi-mrk-return');
+      if (elRet) elRet.textContent = port.expected_return.toFixed(2);
+
+      const elVol = document.getElementById('kpi-mrk-vol');
+      if (elVol) elVol.textContent = port.volatility.toFixed(2);
+
+      const elSr = document.getElementById('kpi-mrk-sharpe');
+      if (elSr) elSr.textContent = port.sharpe_ratio.toFixed(4);
+
+      const elFeas = document.getElementById('kpi-mrk-feas');
+      const elFeasSub = document.getElementById('kpi-mrk-feas-sub');
+      if (elFeas) {
+        if (port.is_feasible) {
+          elFeas.textContent = '100% Factible';
+          elFeas.style.color = 'var(--accent)';
+          if (elFeasSub) elFeasSub.textContent = `Suma: ${port.budget_sum.toFixed(2)}% · 0 excesos`;
+        } else {
+          elFeas.textContent = 'Penalizado';
+          elFeas.style.color = '#EF4444';
+          if (elFeasSub) elFeasSub.textContent = `Suma: ${port.budget_sum.toFixed(2)}% · Discrepancia`;
+        }
+      }
+
+      // Actualizar gráficos
+      const rf = (this.mrkData.instance?.risk_free_rate || 0.035) * 100;
+      this.mrkFrontierChart.updateCurrentPoint(port, rf);
+      this.mrkAllocationChart.updateAllocations(port.allocations);
+    }
+
+    // Actualizar curva de convergencia cortada a 'gen'
+    if (this.mrkConvergenceChart && this.mrkData.history) {
+      const slicedHist = this.mrkData.history.slice(0, gen + 1);
+      this.mrkConvergenceChart.update(slicedHist);
+    }
+  }
+
+  _playMarkowitz() {
+    this.mrkIsPlaying = true;
+    const btnRunText = document.getElementById('btn-mrk-run-text');
+    if (btnRunText) btnRunText.textContent = 'Ejecutando...';
+
+    const btnPause = document.getElementById('btn-mrk-pause');
+    if (btnPause) btnPause.disabled = false;
+
+    if (this.mrkCurrentGen >= 150) {
+      this.mrkCurrentGen = 0;
+      this._setMarkowitzGeneration(0);
+    }
+
+    let lastTime = performance.now();
+    const intervalMs = 65;
+
+    const loop = (now) => {
+      if (!this.mrkIsPlaying) return;
+      if (now - lastTime >= intervalMs) {
+        lastTime = now;
+        const nextGen = this.mrkCurrentGen + 1;
+        if (nextGen <= 150) {
+          this._setMarkowitzGeneration(nextGen);
+        } else {
+          this._pauseMarkowitz();
+          return;
+        }
+      }
+      this.mrkRafId = requestAnimationFrame(loop);
+    };
+
+    this.mrkRafId = requestAnimationFrame(loop);
+  }
+
+  _pauseMarkowitz() {
+    this.mrkIsPlaying = false;
+    if (this.mrkRafId) {
+      cancelAnimationFrame(this.mrkRafId);
+      this.mrkRafId = null;
+    }
+    const btnRunText = document.getElementById('btn-mrk-run-text');
+    if (btnRunText) btnRunText.textContent = 'Ejecutar';
+
+    const btnPause = document.getElementById('btn-mrk-pause');
+    if (btnPause) btnPause.disabled = true;
+  }
+
+  _renderMarkowitzTopTable(individuals) {
+    const tbody = document.getElementById('markowitz-top-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = individuals.map((ind, idx) => {
+      const isElite = idx < 2;
+      const rankColor = idx === 0 ? 'var(--accent)' : idx === 1 ? 'var(--primary)' : 'var(--text-bright)';
+      const roleBadge = isElite
+        ? `<span class="badge badge-accent">Élite Invariable (k=${idx+1})</span>`
+        : `<span class="badge" style="background:rgba(59,130,246,0.1); color:#3B82F6">Candidato Torneo (p=2)</span>`;
+
+      const barColor = isElite ? '#10B981' : '#3B82F6';
+
+      return `
+        <tr>
+          <td class="mono font-bold" style="color:${rankColor}">#${ind.rank}</td>
+          <td class="mono font-bold">${ind.fitness.toFixed(6)}</td>
+          <td class="mono text-muted">${ind.aptitud_pct.toFixed(2)}%</td>
+          <td class="mono" style="color:#10B981">${ind.expected_return_pct.toFixed(2)}%</td>
+          <td class="mono" style="color:#EF4444">${ind.volatility_pct.toFixed(2)}%</td>
+          <td class="mono font-bold" style="color:#38BDF8">${ind.sharpe_ratio.toFixed(4)}</td>
+          <td class="mono text-muted">${(ind.budget_error * 100).toFixed(3)}%</td>
+          <td>${roleBadge}</td>
+          <td style="min-width: 140px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+                <div style="width:${ind.aptitud_pct}%; height:100%; background:${barColor}; border-radius:3px;"></div>
+              </div>
+              <span class="mono" style="font-size:0.75rem; color:#94A3B8;">${ind.aptitud_pct.toFixed(1)}%</span>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   // Chart.js debe estar cargado (CDN en index.html)

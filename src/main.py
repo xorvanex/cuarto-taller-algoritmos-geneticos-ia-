@@ -41,6 +41,13 @@ from src.problems.pcb import (
     create_default_pcb_instance,
     plot_pcb_convergence,
 )
+from src.problems.markowitz import (
+    MarkowitzModel,
+    PortfolioInstance,
+    PortfolioSolution,
+    create_default_portfolio_instance,
+    plot_markowitz_convergence,
+)
 from src.problems.vrp import (
     VRPModel,
     VRPInstance,
@@ -612,6 +619,315 @@ def run_problem_2_pcb(custom_params: bool = False) -> None:
     export_pcb_results(result, best_sol, instance, params, t_elapsed)
 
 
+
+def export_markowitz_results(
+    result: GAResult,
+    solution: PortfolioSolution,
+    instance: PortfolioInstance,
+    params: GAParams,
+    t_elapsed: float,
+) -> None:
+    """
+    Exporta los resultados reales del algoritmo genético de Markowitz a JSON y JS
+    para que la interfaz web ('src/web/') y el pipeline de datos ('data/')
+    los consuman como única fuente de verdad computacional.
+    """
+    model = MarkowitzModel(instance)
+
+    # Registro de la mejor cartera en cada generación (para scrubber de la interfaz web)
+    generation_portfolios = []
+    for s in result.history:
+        sol = model.decode_chromosome(s.best_chromosome)
+        generation_portfolios.append({
+            "gen": s.generation,
+            "expected_return": round(float(sol.expected_return * 100), 2),
+            "volatility": round(float(sol.volatility * 100), 2),
+            "sharpe_ratio": round(float(sol.sharpe_ratio), 4),
+            "budget_sum": round(float(sol.budget_sum * 100), 2),
+            "budget_error": round(float(sol.budget_error), 5),
+            "is_feasible": bool(sol.is_feasible),
+            "allocations": [
+                {
+                    "ticker": a["ticker"],
+                    "pct": a["percentage"],
+                    "color": a["color"]
+                }
+                for a in sol.asset_allocations
+            ]
+        })
+
+    # Submuestra estocástica de Monte Carlo para la nube de la frontera eficiente en la web (1000 puntos)
+    mc_vols, mc_rets, mc_sharpes = model.generate_monte_carlo_cloud(n_samples=1000, seed=42)
+    monte_carlo_cloud = [
+        {
+            "vol": round(float(v * 100), 2),
+            "ret": round(float(r * 100), 2),
+            "sharpe": round(float(sh), 3)
+        }
+        for v, r, sh in zip(mc_vols, mc_rets, mc_sharpes)
+    ]
+
+    data = {
+        "problem": "MARKOWITZ",
+        "title": "Problema 3: Optimización de Cartera de Inversiones (Markowitz Portfolio Selection)",
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "execution_time_seconds": round(t_elapsed, 4),
+        "params": {
+            "pop_size": params.pop_size,
+            "elitism_count": params.elitism_count,
+            "crossover_rate": params.crossover_rate,
+            "mutation_rate": params.mutation_rate,
+            "tournament_size": params.tournament_size,
+            "max_generations": params.max_generations,
+            "fitness_tolerance": params.fitness_tolerance,
+            "random_seed": params.random_seed,
+        },
+        "instance": {
+            "risk_free_rate": instance.risk_free_rate,
+            "max_asset_exposure": instance.max_asset_exposure,
+            "weight_risk": instance.weight_risk,
+            "weight_return": instance.weight_return,
+            "assets": [
+                {
+                    "id": a.id,
+                    "ticker": a.ticker,
+                    "name": a.name,
+                    "sector": a.sector,
+                    "expected_return": a.expected_return,
+                    "volatility": a.volatility,
+                    "color": a.color,
+                }
+                for a in instance.assets
+            ],
+            "correlation_matrix": [[round(float(v), 2) for v in row] for row in instance.correlation_matrix],
+        },
+        "metrics": {
+            "generations_executed": result.generations_executed,
+            "converged_by_tolerance": bool(result.converged_by_tolerance),
+            "best_fitness": round(float(result.best_fitness), 6),
+            "best_aptitud": round(float(max(0.0, 1.0 - result.best_fitness)), 6),
+            "expected_return_pct": round(float(solution.expected_return * 100), 2),
+            "volatility_pct": round(float(solution.volatility * 100), 2),
+            "variance": round(float(solution.variance), 6),
+            "sharpe_ratio": round(float(solution.sharpe_ratio), 4),
+            "budget_sum_pct": round(float(solution.budget_sum * 100), 2),
+            "budget_error": round(float(solution.budget_error), 5),
+            "max_weight_pct": round(float(solution.max_weight * 100), 2),
+            "exposure_violations": int(solution.exposure_violations),
+            "is_feasible": bool(solution.is_feasible),
+        },
+        "allocations": solution.asset_allocations,
+        "history": [
+            {
+                "gen": s.generation,
+                "best": round(float(s.best_fitness), 6),
+                "avg": round(float(s.avg_fitness), 6),
+                "worst": round(float(s.worst_fitness), 6),
+                "std": round(float(s.std_fitness), 6),
+            }
+            for s in result.history
+        ],
+        "top_individuals": [
+            {
+                "rank": rank + 1,
+                "fitness": round(float(result.final_fitness[idx]), 6),
+                "aptitud_pct": round(float(max(0.0, 1.0 - result.final_fitness[idx]) * 100), 2),
+                "expected_return_pct": round(float(model.decode_chromosome(result.final_population[idx]).expected_return * 100), 2),
+                "volatility_pct": round(float(model.decode_chromosome(result.final_population[idx]).volatility * 100), 2),
+                "sharpe_ratio": round(float(model.decode_chromosome(result.final_population[idx]).sharpe_ratio), 4),
+                "budget_error": round(float(model.decode_chromosome(result.final_population[idx]).budget_error), 5),
+                "is_feasible": bool(model.decode_chromosome(result.final_population[idx]).is_feasible),
+                "chromosome_sample": [round(float(g), 4) for g in result.final_population[idx][:5]],
+            }
+            for rank, idx in enumerate(np.argsort(result.final_fitness)[:8])
+        ],
+        "generation_portfolios": generation_portfolios,
+        "monte_carlo_cloud": monte_carlo_cloud,
+    }
+
+    # 1. Guardar en data/markowitz_results.json
+    global_dir = os.path.join(PROJECT_ROOT, "data")
+    os.makedirs(global_dir, exist_ok=True)
+    global_json = os.path.join(global_dir, "markowitz_results.json")
+    with open(global_json, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+    # 2. Guardar en src/web/data/markowitz_results.json
+    web_dir = os.path.join(SRC_DIR, "web", "data")
+    os.makedirs(web_dir, exist_ok=True)
+    web_json = os.path.join(web_dir, "markowitz_results.json")
+    with open(web_json, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+    # 3. Guardar en src/web/data/markowitz_results.js (garantiza ejecución autónoma)
+    web_js = os.path.join(web_dir, "markowitz_results.js")
+    with open(web_js, "w", encoding="utf-8") as f:
+        f.write("/** Datos certificados de simulación Markowitz generados por Python (src/main.py) */\n")
+        f.write("window.MARKOWITZ_SIMULATION_DATA = ")
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write(";\n")
+
+    print(f"\n[EXPORTACIÓN MODULAR DE DATOS MARKOWITZ A LA WEB]")
+    print(f"  [OK] Dataset global:               {global_json}")
+    print(f"  [OK] Dataset web JSON:             {web_json}")
+    print(f"  [OK] Dataset web JS (autónomo):    {web_js}")
+
+
+def run_problem_3_markowitz(custom_params: bool = False) -> None:
+    """
+    Ejecuta la optimización del Problema 3: Optimización de Cartera de Inversiones (Markowitz).
+
+    Args:
+        custom_params: Si es True, permite al usuario ingresar parámetros manuales.
+    """
+    print("\n" + "#" * 86)
+    print("  EJECUTANDO PROBLEMA 3: OPTIMIZACIÓN DE CARTERA DE INVERSIONES (MARKOWITZ)")
+    print("#" * 86)
+
+    # 1. Configuración de hiperparámetros de cátedra
+    pop_size = 1000
+    elitism = 2
+    crossover = 0.90
+    mutation = 0.02
+    max_gens = 150
+    tolerance = 0.01
+
+    if custom_params:
+        print("\n--- CONFIGURACIÓN PERSONALIZADA ---")
+        try:
+            val = input(f"Tamaño de población N [{pop_size}]: ").strip()
+            if val: pop_size = int(val)
+            val = input(f"Probabilidad de cruce Pc [{crossover}]: ").strip()
+            if val: crossover = float(val)
+            val = input(f"Probabilidad de mutación Pm [{mutation}]: ").strip()
+            if val: mutation = float(val)
+            val = input(f"Máximo de generaciones [{max_gens}]: ").strip()
+            if val: max_gens = int(val)
+        except ValueError as err:
+            print(f"[!] Entrada inválida ({err}). Usando valores por defecto de cátedra.")
+
+    params = GAParams(
+        pop_size=pop_size,
+        elitism_count=elitism,
+        crossover_rate=crossover,
+        mutation_rate=mutation,
+        tournament_size=2,
+        max_generations=max_gens,
+        fitness_tolerance=tolerance,
+        random_seed=42
+    )
+
+    print(f"\n[CONFIGURACIÓN ACTIVA]")
+    print(f"  * Población (N):              {params.pop_size} individuos")
+    print(f"  * Elitismo:                   {params.elitism_count} mejores conservados intactos")
+    print(f"  * Selección:                  Torneo determinístico p={params.tournament_size} (Padre 1) + Aleatorio (Padre 2)")
+    print(f"  * Cruce:                      Un solo punto (SPX) con Pc = {params.crossover_rate * 100:.1f}%")
+    print(f"  * Mutación:                   Puntual con Pm = {params.mutation_rate * 100:.1f}%")
+    print(f"  * Criterio de Parada:         Fitness normalizado < {params.fitness_tolerance:.4f} (10^-2) o {params.max_generations} generaciones")
+
+    # 2. Inicializar Modelo e Instancia
+    instance = create_default_portfolio_instance()
+    model = MarkowitzModel(instance)
+
+    print(f"\n[ESCENARIO DE INVERSIÓN MARKOWITZ]")
+    print(f"  * Universo de Activos:        {len(instance.assets)} activos globales")
+    print(f"  * Tasa Libre de Riesgo (Rf):  {instance.risk_free_rate * 100:.2f}% anual")
+    print(f"  * Límite Máx por Activo:      {instance.max_asset_exposure * 100:.1f}%")
+    print(f"  * Ponderación Multicriterio:  50% Riesgo (Volatilidad) + 50% Rendimiento Esperado")
+    print(f"  * Penalizaciones Cuadráticas: Lambda Presupuesto = {instance.lambda_budget:.1f}, Lambda Exposición = {instance.lambda_exposure:.1f}")
+
+    print("\n[INICIANDO CICLO GENERACIONAL]")
+    print("-" * 86)
+    print(f"{'Gen':<6} | {'Mejor Fitness':<15} | {'Promedio':<15} | {'Peor':<15} | {'Desv. Est.':<12} | {'Estado'}")
+    print("-" * 86)
+
+    def on_progress(stats: GenerationStats) -> None:
+        if stats.generation == 0 or stats.generation % 5 == 0 or stats.best_fitness < params.fitness_tolerance:
+            tag = "PARADA (10^-2)" if stats.best_fitness < params.fitness_tolerance else "En evolución"
+            print(f"{stats.generation:<6} | {stats.best_fitness:<15.5f} | {stats.avg_fitness:<15.5f} | "
+                  f"{stats.worst_fitness:<15.5f} | {stats.std_fitness:<12.5f} | {tag}")
+
+    # 3. Ejecución del Algoritmo Genético
+    t_start = time.time()
+    engine = SimpleGeneticAlgorithm(params)
+    result = engine.run(
+        fitness_function=model.evaluate_fitness,
+        chromosome_length=model.num_genes,
+        bounds=(0.0, 0.40),
+        progress_callback=on_progress
+    )
+    t_elapsed = time.time() - t_start
+
+    # 4. Decodificación de la Mejor Solución
+    best_sol = model.decode_chromosome(result.best_chromosome)
+
+    print("\n" + "=" * 86)
+    print("  RESULTADOS DE LA CARTERA DE INVERSIONES MARKOWITZ (ALGORITMO GENÉTICO)")
+    print("=" * 86)
+    print(f"Tiempo de cómputo:             {t_elapsed:.2f} segundos")
+    print(f"Generaciones ejecutadas:       {result.generations_executed} / {params.max_generations}")
+    print(f"Convergencia por umbral:       {'SÍ' if result.converged_by_tolerance else 'NO (Límite de épocas alcanzado)'}")
+    print(f"Mejor Fitness normalizado:     {result.best_fitness:.6f}")
+    print(f"Aptitud Biológica:             {max(0.0, 1.0 - result.best_fitness) * 100:.2f}%")
+    print(f"Retorno Medio Esperado E[Rp]:  {best_sol.expected_return * 100:.2f}% anual")
+    print(f"Volatilidad Anualizada sigma:  {best_sol.volatility * 100:.2f}% anual")
+    print(f"Varianza del Portafolio:       {best_sol.variance:.6f}")
+    print(f"Ratio de Sharpe (SR):          {best_sol.sharpe_ratio:.4f}")
+    print(f"Suma de Ponderaciones:         {best_sol.budget_sum * 100:.2f}% (Error: {best_sol.budget_error * 100:.3f}%)")
+    print(f"Máxima Exposición Individual:  {best_sol.max_weight * 100:.2f}% (Límite: {instance.max_asset_exposure * 100:.1f}%)")
+    print(f"Factibilidad de la Cartera:    {'100% FACTIBLE (Presupuesto respetado, cero excesos)' if best_sol.is_feasible else 'NO FACTIBLE (Presenta violación presupuestal o concentración)'}")
+
+    print("\n[ESTRUCTURA DE ASIGNACIÓN PATRIMONIAL DEL PORTAFOLIO ÓPTIMO]")
+    print(f"{'Activo':<8} | {'Empresa / Instrumento':<26} | {'Sector':<16} | {'Peso Norm.':<10} | {'Retorno':<8} | {'Volatilidad'}")
+    print("-" * 86)
+    for a in best_sol.asset_allocations:
+        print(f"{a['ticker']:<8} | {a['name']:<26} | {a['sector']:<16} | {a['percentage']:>6.2f}%    | {a['expected_return']*100:>5.1f}%   | {a['volatility']*100:>5.1f}%")
+
+    # 5. Generación de Artefactos Gráficos
+    data_dir = os.path.join(PROJECT_ROOT, "data")
+    os.makedirs(data_dir, exist_ok=True)
+
+    frontier_plot_path = os.path.join(data_dir, "markowitz_efficient_frontier.png")
+    model.plot_efficient_frontier(best_sol, frontier_plot_path, dpi=300)
+
+    alloc_plot_path = os.path.join(data_dir, "markowitz_allocation.png")
+    model.plot_asset_allocation(best_sol, alloc_plot_path, dpi=300)
+
+    conv_plot_path = os.path.join(data_dir, "markowitz_convergence.png")
+    plot_markowitz_convergence(result.history, params.fitness_tolerance, conv_plot_path, dpi=300)
+
+    print(f"\n[GRÁFICOS]")
+    print(f"  [OK] Frontera Eficiente:           {frontier_plot_path}")
+    print(f"  [OK] Asignación Patrimonial:       {alloc_plot_path}")
+    print(f"  [OK] Curva de Convergencia:        {conv_plot_path}")
+
+    # 6. Exportación de Datos
+    export_markowitz_results(result, best_sol, instance, params, t_elapsed)
+
+    # 7. Tabulación para el Informe (Subsecciones 17.1 y 17.2)
+    print("\n" + "=" * 86)
+    print("  TABLA DE POBLACIÓN INICIAL (Muestra primeros 5 individuos - Gen 0)")
+    print("=" * 86)
+    print(f"{'Individuo':<10} | {'Genes de Cromosoma (Muestra primeros 5)':<42} | {'Fitness Normalizado'}")
+    print("-" * 86)
+    for i in range(5):
+        sample_genes = ", ".join([f"{g:.3f}" for g in result.initial_population[i][:5]]) + "..."
+        print(f"Ind. {i+1:<5} | [{sample_genes:<38}] | {result.initial_fitness[i]:.5f}")
+    print(f"\nEstadísticas Iniciales -> Min: {np.min(result.initial_fitness):.4f} | Prom: {np.mean(result.initial_fitness):.4f} | Max: {np.max(result.initial_fitness):.4f} | Desv: {np.std(result.initial_fitness):.4f}")
+
+    print("\n" + "=" * 86)
+    print(f"  TABLA DE POBLACIÓN FINAL (Top 5 individuos - Generación {result.generations_executed})")
+    print("=" * 86)
+    sorted_final_indices = np.argsort(result.final_fitness)
+    print(f"{'Rango':<10} | {'Genes de Cromosoma (Muestra primeros 5)':<42} | {'Fitness Normalizado'}")
+    print("-" * 86)
+    for rank, idx in enumerate(sorted_final_indices[:5]):
+        sample_genes = ", ".join([f"{g:.3f}" for g in result.final_population[idx][:5]]) + "..."
+        print(f"Top {rank+1:<6} | [{sample_genes:<38}] | {result.final_fitness[idx]:.5f}")
+    print(f"\nEstadísticas Finales -> Mejor: {result.best_fitness:.5f} | Prom: {np.mean(result.final_fitness):.5f} | Max: {np.max(result.final_fitness):.5f} | Desv: {np.std(result.final_fitness):.5f}")
+    print("=" * 86)
+
+
 def main() -> None:
     """Función de despacho principal."""
     parser = argparse.ArgumentParser(description="Optimizador de Algoritmos Genéticos - IA")
@@ -627,7 +943,7 @@ def main() -> None:
         elif args.problem == 2:
             run_problem_2_pcb(custom_params=args.custom)
         elif args.problem == 3:
-            print("\n[!] Problema 3 (Markowitz) en fase de ensamblaje.")
+            run_problem_3_markowitz(custom_params=args.custom)
         return
 
     # Menú interactivo si se ejecuta sin flags
@@ -637,7 +953,8 @@ def main() -> None:
         print("  [2] Ejecutar Problema 1: VRP - Modo Parámetros Personalizados")
         print("  [3] Ejecutar Problema 2: Diseño de Circuitos PCB (Modo Cátedra)")
         print("  [4] Ejecutar Problema 2: PCB - Modo Parámetros Personalizados")
-        print("  [5] Ejecutar Problema 3: Cartera de Inversiones Markowitz (Próximamente)")
+        print("  [5] Ejecutar Problema 3: Cartera de Inversiones Markowitz (Modo Cátedra)")
+        print("  [6] Ejecutar Problema 3: Markowitz - Modo Parámetros Personalizados")
         print("  [0] Salir")
 
         try:
@@ -655,7 +972,9 @@ def main() -> None:
         elif choice == "4":
             run_problem_2_pcb(custom_params=True)
         elif choice == "5":
-            print("\n[+] El módulo Markowitz se cargará a continuación.")
+            run_problem_3_markowitz(custom_params=False)
+        elif choice == "6":
+            run_problem_3_markowitz(custom_params=True)
         elif choice == "0":
             print("\nPrograma finalizado exitosamente.")
             break
