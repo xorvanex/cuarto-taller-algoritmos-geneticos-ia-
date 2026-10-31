@@ -861,101 +861,136 @@
            ════════════════════════════════════ -->
       <section class="tab-panel" id="tab-markowitz" role="tabpanel" aria-labelledby="tab-markowitz-btn">
 
-        <!-- Banner de KPIs Financieros -->
-        <div class="kpi-banner">
-          <div class="kpi-card" id="kpi-mrk-ret-card">
-            <div class="kpi-label">
-              <span class="kpi-icon" aria-hidden="true">
+        <!-- KPI Bar Markowitz -->
+        <div class="kpi-bar" aria-label="Indicadores clave de Markowitz">
+
+          <!-- Retorno Esperado -->
+          <div class="kpi-card kpi-accent">
+            <div class="kpi-top-row">
+              <div class="kpi-label">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
                 </svg>
-              </span>
-              <span>Retorno Esperado E[Rp]</span>
-              <span class="kpi-tooltip-trigger" title="Rendimiento medio anual proyectado de la cartera">i</span>
+                Retorno Esperado E[Rp]
+              </div>
+              <div class="kpi-info-wrap">
+                <button class="kpi-info-btn" type="button" aria-label="Ver explicación de Retorno Esperado">ⓘ</button>
+                <div class="kpi-tooltip">
+                  <strong>Rendimiento Anualizado del Portafolio:</strong><br>
+                  E[Rp] = sum(w_i · mu_i). Ponderación del retorno esperado de los 10 activos según la distribución genotípica calculada por el SGA.
+                </div>
+              </div>
             </div>
-            <div class="kpi-value"><span id="kpi-mrk-return">14.78</span> <span class="kpi-unit">% anual</span></div>
-            <div class="kpi-subtext" id="kpi-mrk-return-sub">Tasa Libre Rf: 3.50% · Anual</div>
+            <div class="kpi-value mono"><span id="kpi-mrk-return">14.78</span> <span class="kpi-unit">% anual</span></div>
+            <div class="kpi-sub" id="kpi-mrk-return-sub">Tasa Libre Rf: 3.50% · Anual</div>
           </div>
 
-          <div class="kpi-card" id="kpi-mrk-vol-card">
-            <div class="kpi-label">
-              <span class="kpi-icon" aria-hidden="true">
+          <!-- Riesgo / Volatilidad -->
+          <div class="kpi-card kpi-primary">
+            <div class="kpi-top-row">
+              <div class="kpi-label">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                 </svg>
-              </span>
-              <span>Riesgo / Volatilidad (sigma_p)</span>
-              <span class="kpi-tooltip-trigger" title="Desviación estándar anualizada del portafolio">i</span>
+                Riesgo / Volatilidad
+              </div>
+              <div class="kpi-info-wrap">
+                <button class="kpi-info-btn" type="button" aria-label="Ver explicación de Riesgo y Volatilidad">ⓘ</button>
+                <div class="kpi-tooltip">
+                  <strong>Volatilidad del Portafolio (sigma_p):</strong><br>
+                  sigma_p = sqrt(w^T · Sigma · w). Desviación estándar anualizada calculada con la matriz de covarianza empírica (10 × 10).
+                </div>
+              </div>
             </div>
-            <div class="kpi-value"><span id="kpi-mrk-vol">14.56</span> <span class="kpi-unit">% anual</span></div>
-            <div class="kpi-subtext" id="kpi-mrk-vol-sub">Varianza: 0.021212</div>
+            <div class="kpi-value mono"><span id="kpi-mrk-vol">14.56</span> <span class="kpi-unit">% anual</span></div>
+            <div class="kpi-sub" id="kpi-mrk-vol-sub">Varianza: 0.021212</div>
           </div>
 
-          <div class="kpi-card" id="kpi-mrk-sr-card">
-            <div class="kpi-label">
-              <span class="kpi-icon" aria-hidden="true">
+          <!-- Ratio de Sharpe -->
+          <div class="kpi-card">
+            <div class="kpi-top-row">
+              <div class="kpi-label">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/>
+                  <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
                 </svg>
-              </span>
-              <span>Ratio de Sharpe (SR)</span>
-              <span class="kpi-tooltip-trigger" title="Premio por riesgo: (E[Rp] - Rf) / sigma_p">i</span>
+                Ratio de Sharpe
+              </div>
+              <div class="kpi-info-wrap">
+                <button class="kpi-info-btn" type="button" aria-label="Ver explicación de Ratio de Sharpe">ⓘ</button>
+                <div class="kpi-tooltip">
+                  <strong>Rendimiento Ajustado por Riesgo (Sharpe Ratio):</strong><br>
+                  SR = (E[Rp] - Rf) / sigma_p. Maximizado por el SGA para localizar la tangencia óptima con la Capital Allocation Line (CAL).
+                </div>
+              </div>
             </div>
-            <div class="kpi-value"><span id="kpi-mrk-sharpe">0.7744</span></div>
-            <div class="kpi-subtext" id="kpi-mrk-sharpe-sub">Tangencia Óptima CAL</div>
+            <div class="kpi-value mono" id="kpi-mrk-sharpe">0.7744</div>
+            <div class="kpi-sub" id="kpi-mrk-sharpe-sub">Tangencia Óptima CAL</div>
           </div>
 
-          <div class="kpi-card" id="kpi-mrk-feas-card">
-            <div class="kpi-label">
-              <span class="kpi-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          <!-- Factibilidad Presupuestal -->
+          <div class="kpi-card">
+            <div class="kpi-top-row">
+              <div class="kpi-label">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
-              </span>
-              <span>Factibilidad Presupuestal</span>
-              <span class="kpi-tooltip-trigger" title="Cumplimiento del 100% de capital y tope del 35% por activo">i</span>
+                Factibilidad Presupuestal
+              </div>
+              <div class="kpi-info-wrap">
+                <button class="kpi-info-btn" type="button" aria-label="Ver explicación de Factibilidad">ⓘ</button>
+                <div class="kpi-tooltip">
+                  <strong>Restricciones Presupuestales y Concentración:</strong><br>
+                  sum(w_i) = 1.0 (100% invertido) y w_i &lt;= 0.35 (exposición máxima individual del 35%).
+                </div>
+              </div>
             </div>
-            <div class="kpi-value" style="color: var(--accent);"><span id="kpi-mrk-feas">100% Factible</span></div>
-            <div class="kpi-subtext" id="kpi-mrk-feas-sub">Suma: 100.68% · 0 violaciones</div>
+            <div class="kpi-value mono" id="kpi-mrk-feas" style="color:var(--accent)">100% Factible</div>
+            <div class="kpi-sub" id="kpi-mrk-feas-sub">Suma: 100.68% · 0 violaciones</div>
           </div>
+
         </div>
 
-        <!-- Fila de Paneles Gráficos: Frontera Eficiente + Curva de Convergencia -->
-        <div class="panels-grid">
+        <!-- Split View: Frontera Eficiente + Gráfica de Convergencia -->
+        <div class="viz-row">
 
-          <!-- Panel Izquierdo: Frontera Eficiente de Markowitz -->
-          <div class="panel-card">
+          <!-- Panel: Frontera Eficiente -->
+          <div class="panel-card map-panel-card">
             <div class="panel-header">
               <div class="panel-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/>
+                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
                 </svg>
-                <span>Frontera Eficiente de Markowitz (10 Activos Globales)</span>
+                Frontera Eficiente de Markowitz (10 Activos Globales)
+              </div>
+              <div class="panel-actions">
+                <span class="badge badge-accent">Espacio Riesgo vs. Retorno</span>
               </div>
             </div>
-            <div class="panel-body" style="height: 380px; position: relative; min-height: 0; overflow: hidden;">
+            <div class="panel-body" style="padding:12px 14px 8px">
               <canvas id="markowitz-frontier-chart"></canvas>
             </div>
             <div class="canvas-legend">
-              <span class="legend-item"><span class="legend-dot" style="background: rgba(148,163,184,0.4);"></span> Nube Factible Monte Carlo</span>
-              <span class="legend-item"><span class="legend-dot" style="background: #38BDF8;"></span> Línea Asignación Capital (CAL)</span>
+              <span class="legend-item"><span class="legend-dot" style="background: #06B6D4;"></span> Activos Individuales</span>
+              <span class="legend-item"><span class="legend-dot" style="background: rgba(148, 163, 184, 0.4);"></span> Nube Monte Carlo (5000)</span>
               <span class="legend-item"><span class="legend-dot" style="background: #10B981;"></span> Portafolio Óptimo SGA</span>
-              <span class="legend-item"><span class="legend-dot" style="background: #EF4444;"></span> Activos Individuales</span>
+              <span class="legend-item"><span class="legend-dot" style="background: #38BDF8;"></span> Línea Tangente (CAL)</span>
             </div>
           </div>
 
-          <!-- Panel Derecho: Convergencia Generacional -->
+          <!-- Panel: Gráfica de Convergencia Markowitz -->
           <div class="panel-card">
             <div class="panel-header">
               <div class="panel-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
-                <span>Convergencia del SGA (Markowitz)</span>
+                Convergencia del SGA (Markowitz)
               </div>
-              <span class="panel-subtitle">Escala Logarítmica Natural</span>
+              <div class="panel-actions">
+                <span class="badge badge-accent">Función de Pérdida Penalizada</span>
+              </div>
             </div>
-            <div class="panel-body" style="height: 380px; position: relative; min-height: 0; overflow: hidden;">
+            <div class="panel-body" style="padding:12px 14px 8px">
               <canvas id="markowitz-convergence-chart"></canvas>
             </div>
             <div class="canvas-legend">
@@ -967,105 +1002,159 @@
 
         </div>
 
-        <!-- Barra de Controles y Scrubber de Markowitz -->
-        <div class="playback-bar" style="margin-top: 16px;">
-          <div class="playback-controls">
-            <button class="btn btn-primary" id="btn-mrk-run" aria-label="Ejecutar evolución Markowitz">
-              <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <!-- Control Bar Markowitz con Timeline Scrubber -->
+        <div class="control-bar" role="toolbar" aria-label="Controles de simulación Markowitz">
+          <div class="control-actions">
+            <!-- Botón Ejecutar -->
+            <button class="btn-primary" id="btn-mrk-run" aria-label="Ejecutar simulación genética de Markowitz">
+              <svg id="icon-mrk-run" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>
               <span id="btn-mrk-run-text">Ejecutar</span>
             </button>
-            <button class="btn btn-secondary" id="btn-mrk-pause" disabled aria-label="Pausar evolución">
-              <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-              <span>Pausar</span>
+
+            <!-- Botón Pausar -->
+            <button class="btn-secondary" id="btn-mrk-pause" disabled aria-label="Pausar evolución">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              Pausar
             </button>
-            <button class="btn btn-secondary" id="btn-mrk-step" aria-label="Avanzar 1 generación">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 4 15 12 5 20"/><line x1="19" y1="4" x2="19" y2="20"/></svg>
-              <span>Paso a Paso</span>
+
+            <!-- Botón Paso a Paso -->
+            <button class="btn-secondary" id="btn-mrk-step" aria-label="Avanzar una generación">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg>
+              Paso a Paso
             </button>
-            <button class="btn btn-secondary" id="btn-mrk-restore" aria-label="Restaurar al caso base certificado">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
-              <span>Caso Base</span>
+
+            <!-- Botón Restaurar Caso Base -->
+            <button class="btn-secondary" id="btn-mrk-restore" title="Restaurar parámetros de cátedra Markowitz" aria-label="Restaurar caso base Markowitz">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10"/><path d="M12 8v4l3 3"/><path d="M22 12h-4l-2-2"/>
+              </svg>
+              Caso Base
             </button>
           </div>
 
-          <div class="playback-timeline">
-            <span class="timeline-label">Línea de Tiempo Evolutiva (Markowitz):</span>
-            <input type="range" class="timeline-slider" id="timeline-mrk-slider" min="0" max="150" value="150" aria-label="Generación evolutiva" />
-            <span class="timeline-gen-display" id="timeline-mrk-val">Gen <strong>150</strong> / 150</span>
+          <!-- Timeline Scrubber Interactivo Markowitz -->
+          <div class="control-timeline">
+            <div class="timeline-meta">
+              <span class="timeline-title">Línea de Tiempo Evolutiva (Markowitz):</span>
+              <span class="gen-counter" id="timeline-mrk-val" aria-live="polite">
+                Gen <strong>150</strong> / 150
+              </span>
+            </div>
+            <input type="range" id="timeline-mrk-slider" min="0" max="150" value="150" class="timeline-slider" aria-label="Explorar generaciones Markowitz interactivamente"/>
           </div>
         </div>
 
-        <!-- Fila Inferior: Estructura Patrimonial + Top 8 Individuos -->
-        <div class="panels-grid" style="margin-top: 16px;">
+        <!-- Tabla de Población Markowitz (Top 8 Portafolios) -->
+        <div class="pop-table-wrap">
+          <div class="pop-table-header">
+            <div>
+              <div class="pop-table-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                Top 8 Mejores Portafolios de la Población (Élite k = 2)
+              </div>
+              <div class="pop-table-sub">
+                Portafolios con mayor Ratio de Sharpe y menor penalización evaluados en la población actual (N = 1000)
+              </div>
+            </div>
+            <div class="pop-table-tags">
+              <span class="badge badge-accent" title="Elitismo canónico (Elitismo.m)">Élite k = 2</span>
+              <span class="badge badge-info" title="Torneo asimétrico de cátedra">Torneo Canónico (p = 2)</span>
+            </div>
+          </div>
 
-          <!-- Distribución de Activos -->
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-title">
+          <table id="table-markowitz-top" aria-label="Mejores portafolios de la generación actual">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 7%;">Rango</th>
+                <th scope="col" style="width: 12%;">Fitness (Norm.)</th>
+                <th scope="col" style="width: 11%;">Aptitud</th>
+                <th scope="col" style="width: 11%;">Retorno</th>
+                <th scope="col" style="width: 11%;">Volatilidad</th>
+                <th scope="col" style="width: 11%;">Sharpe</th>
+                <th scope="col" style="width: 11%;">Error Pres.</th>
+                <th scope="col" style="width: 14%;">Rol Evolutivo</th>
+                <th scope="col" style="width: 12%;">Barra de Aptitud</th>
+              </tr>
+            </thead>
+            <tbody id="markowitz-top-tbody">
+              <!-- Se llena dinámicamente desde app.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tabla de Estructura Patrimonial y Especificación de Activos -->
+        <div class="pop-table-wrap">
+          <div class="pop-table-header">
+            <div>
+              <div class="pop-table-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
                 </svg>
-                <span>Estructura Patrimonial del Portafolio Óptimo</span>
+                Estructura Patrimonial y Especificación de Activos (Portafolio Óptimo)
               </div>
-              <span class="panel-subtitle">Límite Máximo por Activo: 35.0%</span>
+              <div class="pop-table-sub">
+                Distribución porcentual del capital entre los 10 activos globales y validación del límite normativo de exposición (máx. 35.0%)
+              </div>
             </div>
-            <div class="panel-body" style="height: 340px; position: relative; min-height: 0; overflow: hidden;">
-              <canvas id="markowitz-allocation-chart"></canvas>
+            <div class="pop-table-tags">
+              <span class="badge badge-accent">10 Activos Globales</span>
+              <span class="badge badge-info">Límite Máx. 35%</span>
             </div>
           </div>
 
-          <!-- Top 8 Portafolios -->
-          <div class="panel-card">
-            <div class="panel-header">
-              <div class="panel-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <span>Top 8 Mejores Portafolios de la Población (Élite k = 2)</span>
+          <!-- Split interior: Gráfico de asignación + Tabla de activos -->
+          <div class="mrk-allocation-split" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); padding: var(--sp-4);">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-bright); margin-bottom: 8px;">
+                Ponderación Patrimonial por Activo (%)
               </div>
-              <div class="panel-actions">
-                <span class="badge badge-accent">Élite k = 2</span>
-                <span class="badge badge-primary">Torneo Canónico (p = 2)</span>
+              <div style="height: 280px; position: relative; min-height: 0; overflow: hidden;">
+                <canvas id="markowitz-allocation-chart"></canvas>
               </div>
             </div>
-            <div class="pop-table-wrap" style="height: 340px; overflow-y: auto;">
-              <table id="table-markowitz-top">
-                <thead>
-                  <tr>
-                    <th>Rango</th>
-                    <th>Fitness (Norm.)</th>
-                    <th>Aptitud</th>
-                    <th>Retorno</th>
-                    <th>Volatilidad</th>
-                    <th>Sharpe</th>
-                    <th>Error Pres.</th>
-                    <th>Rol Evolutivo</th>
-                    <th>Barra de Aptitud</th>
-                  </tr>
-                </thead>
-                <tbody id="markowitz-top-tbody">
-                  <!-- Se llena dinámicamente desde app.js -->
-                </tbody>
-              </table>
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-bright); margin-bottom: 8px;">
+                Universo de Inversión y Parámetros Certificados
+              </div>
+              <div style="max-height: 280px; overflow-y: auto;">
+                <table style="width: 100%; font-size: 0.75rem;" aria-label="Especificación técnica de activos del portafolio">
+                  <thead>
+                    <tr>
+                      <th scope="col">Ticker</th>
+                      <th scope="col">Sector / Clase</th>
+                      <th scope="col">E[Ri]</th>
+                      <th scope="col">Vol (σ)</th>
+                      <th scope="col">Límite</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><strong style="color:var(--accent)">NVDA</strong></td><td>Tecnología / Semi</td><td>24.50%</td><td>32.00%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">AAPL</strong></td><td>Tecnología / Consumo</td><td>16.80%</td><td>21.50%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">MSFT</strong></td><td>Tecnología / Cloud</td><td>18.20%</td><td>22.00%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">AMZN</strong></td><td>Consumo / Cloud</td><td>19.50%</td><td>25.50%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">GOOGL</strong></td><td>Comunicaciones</td><td>17.40%</td><td>23.00%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">JNJ</strong></td><td>Salud Defensiva</td><td>8.50%</td><td>14.00%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">JPM</strong></td><td>Financiero Global</td><td>12.00%</td><td>19.00%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">XOM</strong></td><td>Energía / Petróleo</td><td>10.50%</td><td>20.00%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">GLD</strong></td><td>Commodity Refugio</td><td>7.00%</td><td>13.50%</td><td>35.0%</td></tr>
+                    <tr><td><strong style="color:var(--accent)">TLT</strong></td><td>Renta Fija Soberana</td><td>4.50%</td><td>12.00%</td><td>35.0%</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-        </div>
-
-        <!-- Banner de Fundamento Algorítmico -->
-        <div class="theory-callout" style="margin-top: 16px;">
-          <div class="theory-callout-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Cuadro Pedagógico Informativo Markowitz -->
+          <div class="table-info-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
-          </div>
-          <div class="theory-callout-content">
-            <div class="theory-callout-title">Fundamento Algorítmico (Problema 3 — Cartera de Inversiones Markowitz):</div>
-            <p>
-              Cada individuo codifica un vector continuo de ponderaciones brutas <code>w_i en [0.0, 0.40]</code> para 10 activos de sectores globales diversificados.
-              El <em>Algoritmo Genético Simple (SGA)</em> aplica Cruce en Un Solo Punto (SPX, <code>P_c = 90%</code>) y Mutación Puntual (<code>P_m = 2%</code>).
-              Las restricciones de presupuesto unitario <code>sum(w_i) = 1.0</code> y límite de exposición <code>w_i &lt;= 0.35</code> se aplican mediante penalizaciones cuadráticas exteriores en la función de aptitud, guiando el proceso evolutivo hacia la curva de la frontera eficiente sin sesgo heurístico.
-            </p>
+            <span>
+              <strong>Fundamento Algorítmico (Problema 3 — Cartera de Inversiones Markowitz):</strong> Cada individuo codifica un vector continuo de ponderaciones brutas <i>w<sub>i</sub></i> ∈ [0.0, 0.40] para 10 activos de sectores globales diversificados. El <em>Algoritmo Genético Simple (SGA)</em> aplica Cruce en Un Solo Punto (SPX, <i>P<sub>c</sub></i> = 90%) y Mutación Puntual (<i>P<sub>m</sub></i> = 2%). Las restricciones de presupuesto unitario ∑<i>w<sub>i</sub></i> = 1.0 y límite de exposición <i>w<sub>i</sub></i> ≤ 0.35 se aplican mediante penalizaciones cuadráticas exteriores en la función de aptitud, guiando el proceso evolutivo hacia la curva de la frontera eficiente sin sesgo heurístico.
+            </span>
           </div>
         </div>
 
