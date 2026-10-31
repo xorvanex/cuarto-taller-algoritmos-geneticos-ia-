@@ -1852,6 +1852,17 @@ class DashboardController {
 
   /* ── Tabs ────────────────────────────────────────────────── */
   _bindTabs() {
+    // Delegación de eventos para botones data-tab-goto (en landing u otras secciones)
+    document.addEventListener('click', (e) => {
+      const gotoBtn = e.target.closest('[data-tab-goto]');
+      if (gotoBtn) {
+        e.preventDefault();
+        const tabTarget = gotoBtn.dataset.tabGoto;
+        this.switchTab(tabTarget);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.tab;
@@ -1861,6 +1872,24 @@ class DashboardController {
         btn.classList.add('active');
         const panel = document.getElementById(`tab-${target}`);
         if (panel) panel.classList.add('active');
+
+        // Control dinámico de la barra lateral (oculta en Landing, visible en los problemas)
+        const layout = document.querySelector('.main-layout');
+        if (layout) {
+          if (target === 'landing') {
+            layout.classList.add('on-landing');
+            this._setStatus('ready', 'OptiGen AI · Plataforma de Simulación');
+            return;
+          } else {
+            layout.classList.remove('on-landing');
+          }
+        }
+
+        if (target === 'comparador') {
+          this._setStatus('ready', 'Comparador Multi-Problema');
+          setTimeout(() => this._initComparadorCharts(), 60);
+          return;
+        }
 
         // Adaptar Sidebar Caso Base & Cátedra según la pestaña activa
         const accBaseContent = document.getElementById('acc-base');
@@ -2156,14 +2185,73 @@ class DashboardController {
         this._setText('kpi-fitness',  stat.best.toFixed(5));
         const estDist = gen === maxG ? 429.8 : (429.8 + (stat.best - 0.37825) * 450);
         this._setText('kpi-dist',     estDist.toFixed(1) + ' km');
-        this._setText('kpi-feasible', stat.worst > 500 ? 'Penaliz.' : '100%');
         this._setText('kpi-aptitud',  ((1.0 - Math.min(stat.best, 1.0)) * 100).toFixed(2) + '%');
 
-        // Actualizar el grafo de rutas para esa generación
-        if (genRoutes && genRoutes[targetGen]) {
-          this.renderer.draw(genRoutes[targetGen]);
-        } else if (gen === maxG) {
-          this.renderer.draw(this.pythonRoutes);
+        // Detección dinámica y reactiva de factibilidad de rutas para la generación actual
+        const curRoutes = (genRoutes && genRoutes[targetGen]) ? genRoutes[targetGen] : (gen === maxG ? this.pythonRoutes : null);
+        if (curRoutes) {
+          const inst = this.pyData?.instance || (typeof VRP_INSTANCE !== 'undefined' ? VRP_INSTANCE : null);
+          const custs = inst ? inst.customers : [];
+          const depot = inst?.depot || { x: 50, y: 50 };
+          const speed = inst?.avg_speed || 45.0;
+          const capLimit = inst?.vehicle_capacity || 120.0;
+          const timeLimit = inst?.max_shift_time || 480.0;
+
+          let maxLoad = 0;
+          let maxTime = 0;
+          let totalOverload = 0;
+          let totalOvertime = 0;
+
+          for (const r of curRoutes) {
+            let rDist = 0;
+            let rLoad = 0;
+            let rServ = 0;
+            let currX = depot.x;
+            let currY = depot.y;
+
+            for (const cIdx of r) {
+              const c = custs[cIdx];
+              if (c) {
+                rDist += Math.hypot(c.x - currX, c.y - currY);
+                rLoad += (c.demand || 0);
+                rServ += (c.service || c.service_time || 0);
+                currX = c.x;
+                currY = c.y;
+              }
+            }
+            rDist += Math.hypot(depot.x - currX, depot.y - currY);
+            const rTime = (rDist / speed) * 60.0 + rServ;
+
+            if (rLoad > maxLoad) maxLoad = rLoad;
+            if (rTime > maxTime) maxTime = rTime;
+
+            if (rLoad > capLimit) totalOverload += (rLoad - capLimit);
+            if (rTime > timeLimit) totalOvertime += (rTime - timeLimit);
+          }
+
+          const feasEl = document.getElementById('kpi-feasible');
+          const feasSubEl = document.getElementById('kpi-feasible-sub');
+          const isFeas = (totalOverload === 0 && totalOvertime === 0);
+
+          if (feasEl) {
+            if (isFeas) {
+              feasEl.textContent = '100% Factible';
+              feasEl.style.color = 'var(--accent)';
+            } else {
+              feasEl.textContent = 'Penalizado';
+              feasEl.style.color = 'var(--danger)';
+            }
+          }
+
+          if (feasSubEl) {
+            if (isFeas) {
+              feasSubEl.textContent = `Carga: ${maxLoad.toFixed(1)}/120 kg · Turno: ${maxTime.toFixed(0)}/480 min`;
+            } else {
+              feasSubEl.textContent = `${totalOverload.toFixed(1)} kg sobrecarga · ${totalOvertime.toFixed(0)} min exceso`;
+            }
+          }
+
+          this.renderer.draw(curRoutes);
         }
 
         // Si es la última generación, mostrar el top 8 original de Python
@@ -2719,16 +2807,23 @@ class DashboardController {
       this._setText('kpi-pcb-area-sub', `Envolvente: ${m.boxW.toFixed(1)} × ${m.boxH.toFixed(1)} mm`);
 
       const feasEl = document.getElementById('kpi-pcb-feasible');
+      const feasSubEl = document.getElementById('kpi-pcb-feasible-sub');
       if (feasEl) {
         if (m.isFeasible) {
           feasEl.textContent = '100% Factible';
           feasEl.style.color = 'var(--accent)';
         } else {
           feasEl.textContent = 'Penalizado';
-          feasEl.style.color = 'var(--danger)';
+          feasEl.style.color = '#EF4444';
         }
       }
-      this._setText('kpi-pcb-feasible-sub', `${m.overlapArea.toFixed(1)} mm² colisión (${m.errCount} err)`);
+      if (feasSubEl) {
+        if (m.isFeasible) {
+          feasSubEl.textContent = '0 colisiones · Aislamiento 2.0 mm OK';
+        } else {
+          feasSubEl.textContent = `${m.overlapArea.toFixed(1)} mm² solape · ${m.errCount} colisiones`;
+        }
+      }
     }
 
     // Actualizar Top 8 dinámico
@@ -2830,15 +2925,16 @@ class DashboardController {
     const boxH = Math.max(0, maxY - minY);
     const area = boxW * boxH;
 
-    // Detección física de colisiones/solapamientos entre componentes (idéntica a pcb.py)
+    // Detección física de colisiones/solapamientos entre componentes (con holgura dieléctrica preventiva de cátedra 2.0 mm)
+    const clearance = 2.0;
     let overlapArea = 0;
     let errCount = 0;
     for (let i = 0; i < components.length; i++) {
       for (let j = i + 1; j < components.length; j++) {
         const c1 = components[i];
         const c2 = components[j];
-        const dx = (c1.width + c2.width) / 2.0 - Math.abs(c1.x - c2.x);
-        const dy = (c1.height + c2.height) / 2.0 - Math.abs(c1.y - c2.y);
+        const dx = (c1.width + c2.width) / 2.0 + clearance - Math.abs(c1.x - c2.x);
+        const dy = (c1.height + c2.height) / 2.0 + clearance - Math.abs(c1.y - c2.y);
         if (dx > 0 && dy > 0) {
           overlapArea += dx * dy;
           errCount++;
@@ -3212,6 +3308,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Iniciar controlador
   window._dashboard = new DashboardController();
+  window.app = window._dashboard;
 
   console.log('[EvoSuite AI] Dashboard inicializado. Motor SGA listo.');
   console.log('[EvoSuite AI] Instancia VRP: 15 clientes, 3 camiones, cap=120kg.');

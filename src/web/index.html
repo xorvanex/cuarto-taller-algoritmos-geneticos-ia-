@@ -68,7 +68,15 @@
 
     <!-- Tabs de navegación (Centro) -->
     <nav class="topbar-tabs" role="tablist" aria-label="Problemas del taller">
-      <button class="tab-btn active" data-tab="vrp" role="tab" aria-selected="true" aria-controls="tab-vrp">
+      <button class="tab-btn active" data-tab="landing" role="tab" aria-selected="true" aria-controls="tab-landing" id="tab-landing-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Inicio</span>
+        <span class="tab-badge">AG</span>
+      </button>
+
+      <button class="tab-btn" data-tab="vrp" role="tab" aria-selected="false" aria-controls="tab-vrp" id="tab-vrp-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
         </svg>
@@ -81,18 +89,18 @@
           <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 15h3M20 9h3M20 15h3"/>
         </svg>
         <span>PCB — Circuitos</span>
-        <span class="tab-badge active">P2</span>
+        <span class="tab-badge">P2</span>
       </button>
 
-      <button class="tab-btn" data-tab="markowitz" role="tab" aria-selected="false" aria-controls="tab-markowitz">
+      <button class="tab-btn" data-tab="markowitz" role="tab" aria-selected="false" aria-controls="tab-markowitz" id="tab-markowitz-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
         </svg>
         <span>Markowitz — Cartera</span>
-        <span class="tab-badge active">P3</span>
+        <span class="tab-badge">P3</span>
       </button>
 
-      <button class="tab-btn" data-tab="comparador" role="tab" aria-selected="false" aria-controls="tab-comparador">
+      <button class="tab-btn" data-tab="comparador" role="tab" aria-selected="false" aria-controls="tab-comparador" id="tab-comparador-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>
         </svg>
@@ -112,7 +120,7 @@
   <!-- ════════════════════════════════════════════════════════
        MAIN LAYOUT
        ════════════════════════════════════════════════════════ -->
-  <div class="main-layout">
+  <div class="main-layout on-landing">
 
     <!-- ── Sidebar con Secciones Acordeón ──────────────────────── -->
     <aside class="sidebar" aria-label="Panel de configuración">
@@ -272,11 +280,244 @@
 
     <!-- ── Content Area (Única Barra de Desplazamiento Central) ─── -->
     <main class="content-area" role="main">
+      <!-- ════════════════════════════════════════════════════════
+           TAB: INICIO / PRESENTACIÓN (LANDING PAGE)
+           ════════════════════════════════════════════════════════ -->
+      <section class="tab-panel active" id="tab-landing" role="tabpanel" aria-labelledby="tab-landing-btn">
+        <div class="landing-container">
+
+          <!-- Hero Institucional -->
+          <div class="landing-hero">
+            <div class="landing-inst-badge">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+              <span>Universidad de Cartagena · Facultad de Ingeniería · Ingeniería de Sistemas</span>
+            </div>
+            <h1 class="landing-hero-title">OptiGen AI: <span>Optimización Evolutiva Multi-Dominio</span></h1>
+            <p class="landing-hero-desc">
+              Plataforma computacional e interactiva de simulación basada en Algoritmo Genético Simple (SGA) con operadores canónicos de cátedra, manejo riguroso de restricciones complejas y funciones de penalización cuadrática exterior sobre tres problemas emblemáticos de ingeniería.
+            </p>
+            <div class="landing-meta-grid">
+              <div class="landing-meta-item">
+                <span class="landing-meta-label">Estudiante / Autor</span>
+                <span class="landing-meta-value">Dago David Palmera Navarro (0222321003)</span>
+              </div>
+              <div class="landing-meta-item">
+                <span class="landing-meta-label">Docente Titular</span>
+                <span class="landing-meta-value">Ing. Manuel Alejandro Ospina Alarcón</span>
+              </div>
+              <div class="landing-meta-item">
+                <span class="landing-meta-label">Asignatura & Corte</span>
+                <span class="landing-meta-value">Inteligencia Artificial · Semestre VII (Corte 3)</span>
+              </div>
+              <div class="landing-meta-item">
+                <span class="landing-meta-label">Ubicación & Fecha</span>
+                <span class="landing-meta-value">Cartagena de Indias, 2026</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pilares del Algoritmo Genético Simple (SGA) -->
+          <div class="landing-section">
+            <div class="landing-section-header">
+              <div class="landing-section-title">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                <span>Arquitectura y Fundamento Algorítmico Canónico (SGA)</span>
+              </div>
+              <div class="landing-section-subtitle">
+                Los cuatro pilares de ingeniería evolutiva implementados conforme a los lineamientos metodológicos de la cátedra.
+              </div>
+            </div>
+
+            <div class="theory-pillars-grid">
+              <div class="theory-pillar-card">
+                <div class="pillar-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M7 7l5 5-5 5M17 7l-5 5 5 5"/></svg>
+                </div>
+                <div class="pillar-title">1. Genotipo & Fenotipo</div>
+                <div class="pillar-desc">
+                  Codificaciones continuas y de Claves Aleatorias (Random Keys) que permiten mapear permutaciones estrictas (VRP), coordenadas 2D continuas (PCB) y ponderaciones convexas (Markowitz) sin operadores de reparación ad-hoc.
+                </div>
+              </div>
+
+              <div class="theory-pillar-card">
+                <div class="pillar-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <div class="pillar-title">2. Torneo Asimétrico & Elitismo</div>
+                <div class="pillar-desc">
+                  Selección por torneo determinístico binario (p = 2) para el primer progenitor, combinada con selección aleatoria uniforme para el segundo y elitismo invariante (k = 2) que asegura convergencia monótona y preserva diversidad.
+                </div>
+              </div>
+
+              <div class="theory-pillar-card">
+                <div class="pillar-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                </div>
+                <div class="pillar-title">3. Cruce SPX & Mutación Fina</div>
+                <div class="pillar-desc">
+                  Operador de Cruce en un Solo Punto (SPX, Pc = 90%) con partición respetuosa de bloques fenotípicos funcionales, acoplado a Mutación Puntual gaussiana (Pm = 2%) actuando como ajuste fino milimétrico.
+                </div>
+              </div>
+
+              <div class="theory-pillar-card">
+                <div class="pillar-icon-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div class="pillar-title">4. Penalización Cuadrática Exterior</div>
+                <div class="pillar-desc">
+                  Integración de términos de penalización cuadrática exterior que transforman restricciones físicas complejas en pendientes de gradiente continuas, guiando la población desde zonas infactibles hacia la factibilidad absoluta.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trío de Problemas del Taller -->
+          <div class="landing-section">
+            <div class="landing-section-header">
+              <div class="landing-section-title">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span>Catálogo de Problemas de Ingeniería Implementados</span>
+              </div>
+              <div class="landing-section-subtitle">
+                Seleccione cualquiera de los módulos para explorar la simulación generacional interactiva con datos certificados.
+              </div>
+            </div>
+
+            <div class="problems-showcase-grid">
+
+              <!-- Tarjeta Problema 1: VRP -->
+              <div class="problem-card problem-card-p1">
+                <div class="problem-card-top">
+                  <div class="problem-badge-row">
+                    <span class="problem-num-badge p1-badge">Problema 1</span>
+                    <span class="problem-domain-tag">Logística de Despacho & Grafos</span>
+                  </div>
+                  <div class="problem-card-title">Optimización de Rutas de Entrega (VRP)</div>
+                  <div class="problem-card-desc">
+                    Minimización de la distancia total euclídea para una flota de 3 camiones que despachan 15 clientes en una red de 100 × 100 km, cumpliendo restricciones de capacidad de carga y turno horario máximo.
+                  </div>
+                  <div class="problem-specs-list">
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Clientes / Nodos:</span>
+                      <span class="spec-val">15 paradas + 1 depósito central</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Flota de Transporte:</span>
+                      <span class="spec-val">3 camiones (120 kg / 480 min turno)</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Distancia Óptima:</span>
+                      <span class="spec-val" style="color:#10B981">429.8 km (100% Factible)</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Fitness Normalizado:</span>
+                      <span class="spec-val">0.37825</span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="problem-btn-action problem-btn-p1" data-tab-goto="vrp">
+                  <span>Explorar Simulación P1</span>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+
+              <!-- Tarjeta Problema 2: PCB -->
+              <div class="problem-card problem-card-p2">
+                <div class="problem-card-top">
+                  <div class="problem-badge-row">
+                    <span class="problem-num-badge p2-badge">Problema 2</span>
+                    <span class="problem-domain-tag">Microelectrónica & Diseño VLSI</span>
+                  </div>
+                  <div class="problem-card-title">Diseño de Circuitos Electrónicos (PCB Layout)</div>
+                  <div class="problem-card-desc">
+                    Disposición física óptima de 14 circuitos integrados y pasivos sobre un sustrato de 100 × 80 mm, minimizando la longitud Manhattan de 22 trazas y el área envolvente con aislamiento dieléctrico estricto de 2.0 mm.
+                  </div>
+                  <div class="problem-specs-list">
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Componentes & Nets:</span>
+                      <span class="spec-val">14 elementos · 22 redes interconectadas</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Longitud de Pistas:</span>
+                      <span class="spec-val" style="color:#38BDF8">1080.2 mm (Reducción 47.9%)</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Área de Sustrato:</span>
+                      <span class="spec-val" style="color:#10B981">3167.7 mm² (60.4% ahorro)</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Estado Dieléctrico:</span>
+                      <span class="spec-val" style="color:#10B981">0 colisiones · 100% Factible</span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="problem-btn-action problem-btn-p2" data-tab-goto="pcb">
+                  <span>Explorar Simulación P2</span>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+
+              <!-- Tarjeta Problema 3: Markowitz -->
+              <div class="problem-card problem-card-p3">
+                <div class="problem-card-top">
+                  <div class="problem-badge-row">
+                    <span class="problem-num-badge p3-badge">Problema 3</span>
+                    <span class="problem-domain-tag">Ingeniería Financiera & Portafolios</span>
+                  </div>
+                  <div class="problem-card-title">Asignación de Activos (Markowitz)</div>
+                  <div class="problem-card-desc">
+                    Optimización multicriterio de media-varianza sobre 10 activos de sectores globales, maximizando el Ratio de Sharpe bajo restricción de presupuesto unitario estricto (100%) y tope de exposición máxima del 35%.
+                  </div>
+                  <div class="problem-specs-list">
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Universo de Inversión:</span>
+                      <span class="spec-val">10 activos (Tech, Fin, Commodities, etc.)</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Retorno Esperado:</span>
+                      <span class="spec-val" style="color:#F59E0B">14.78% anual</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Volatilidad (Riesgo):</span>
+                      <span class="spec-val">14.56% anual (Varianza: 0.0212)</span>
+                    </div>
+                    <div class="problem-spec-row">
+                      <span class="spec-name">Ratio de Sharpe (SR):</span>
+                      <span class="spec-val" style="color:#10B981">0.7744 (Tangencia Óptima CAL)</span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="problem-btn-action problem-btn-p3" data-tab-goto="markowitz">
+                  <span>Explorar Simulación P3</span>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Banner Comparador -->
+          <div class="landing-comp-banner">
+            <div class="landing-comp-text">
+              <div class="landing-comp-title">Evaluación Integral y Comparativa Transversal</div>
+              <div class="landing-comp-sub">
+                Inspeccione las curvas superpuestas de convergencia normalizada, el radar multicriterio de ingeniería y la matriz de rendimiento en 8 dimensiones.
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary" style="white-space:nowrap; padding: 12px 24px;" data-tab-goto="comparador">
+              <span>Abrir Comparador Multi-Problema</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
 
       <!-- ════════════════════════════════════
            TAB 1 — PROBLEMA 1: VRP
            ════════════════════════════════════ -->
-      <section class="tab-panel active" id="tab-vrp" role="tabpanel" aria-labelledby="tab-vrp-btn">
+      <section class="tab-panel" id="tab-vrp" role="tabpanel" aria-labelledby="tab-vrp-btn">
 
         <!-- KPI Bar -->
         <div class="kpi-bar" aria-label="Indicadores clave">
@@ -1164,42 +1405,139 @@
            TAB 4 — Comparador
            ════════════════════════════════════ -->
       <section class="tab-panel" id="tab-comparador" role="tabpanel" aria-labelledby="tab-comparador-btn">
-        <div class="panel-card" style="padding: 24px;">
-          <h2 style="margin-bottom: 16px; color: var(--text-bright);">Comparador Multi-Problema</h2>
-          <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="border-bottom: 1px solid var(--border); text-align: left;">
-                <th style="padding: 10px;">Problema</th>
-                <th style="padding: 10px;">Mejor Fitness</th>
-                <th style="padding: 10px;">Métrica Principal</th>
-                <th style="padding: 10px;">Factibilidad</th>
-                <th style="padding: 10px;">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 10px; font-weight: 600; color: var(--accent);">P1: VRP (Rutas de Entrega)</td>
-                <td style="padding: 10px;" class="mono" id="comp-vrp-fitness">0.37825</td>
-                <td style="padding: 10px;" class="mono" id="comp-vrp-dist">429.8 km (3 rutas, 15 clientes)</td>
-                <td style="padding: 10px;"><span class="badge badge-success">100% Factible (0 excesos)</span></td>
-                <td style="padding: 10px;"><span class="badge badge-accent">Certificado</span></td>
-              </tr>
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 10px; font-weight: 600; color: var(--primary);">P2: PCB (Diseño de Circuitos)</td>
-                <td style="padding: 10px;" class="mono" id="comp-pcb-fitness">0.67591</td>
-                <td style="padding: 10px;" class="mono" id="comp-pcb-metric">1080.2 mm (3168 mm², 60.4% ahorro)</td>
-                <td style="padding: 10px;"><span class="badge badge-success">100% Factible (0 colisiones)</span></td>
-                <td style="padding: 10px;"><span class="badge badge-accent">Certificado</span></td>
-              </tr>
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 10px; font-weight: 600; color: #F59E0B;">P3: Markowitz (Cartera de Activos)</td>
-                <td style="padding: 10px;" class="mono" id="comp-mrk-fitness">0.43348</td>
-                <td style="padding: 10px;" class="mono" id="comp-mrk-metric">14.78% Retorno · 14.56% Vol · SR: 0.774</td>
-                <td style="padding: 10px;"><span class="badge badge-success">100% Factible (0 violaciones)</span></td>
-                <td style="padding: 10px;"><span class="badge badge-accent">Certificado</span></td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="comp-container">
+
+          <!-- Fila de Tarjetas Ejecutivas Resumen -->
+          <div class="comp-cards-grid">
+            <div class="comp-kpi-card" style="border-left: 3px solid #10B981;">
+              <div class="comp-kpi-header">
+                <span class="comp-kpi-title">Problema 1: VRP</span>
+                <span class="comp-kpi-tag" style="background:rgba(16,185,129,0.15); color:#10B981;">Logística</span>
+              </div>
+              <div class="comp-kpi-main-val">429.8 km</div>
+              <div class="comp-kpi-subtext">Fitness: 0.37825 · 3 rutas · 100% Factible (0 sobrecargas)</div>
+            </div>
+
+            <div class="comp-kpi-card" style="border-left: 3px solid #38BDF8;">
+              <div class="comp-kpi-header">
+                <span class="comp-kpi-title">Problema 2: PCB</span>
+                <span class="comp-kpi-tag" style="background:rgba(56,189,248,0.15); color:#38BDF8;">Microelectrónica</span>
+              </div>
+              <div class="comp-kpi-main-val">1080.2 mm</div>
+              <div class="comp-kpi-subtext">Fitness: 0.67591 · Área: 3167.7 mm² (60.4% ahorro) · 0 colisiones</div>
+            </div>
+
+            <div class="comp-kpi-card" style="border-left: 3px solid #F59E0B;">
+              <div class="comp-kpi-header">
+                <span class="comp-kpi-title">Problema 3: Markowitz</span>
+                <span class="comp-kpi-tag" style="background:rgba(245,158,11,0.15); color:#F59E0B;">Finanzas</span>
+              </div>
+              <div class="comp-kpi-main-val">SR 0.7744</div>
+              <div class="comp-kpi-subtext">Fitness: 0.43348 · Retorno: 14.78% · Volatilidad: 14.56% · 100% Factible</div>
+            </div>
+          </div>
+
+          <!-- Gráficos Comparativos Twin -->
+          <div class="comp-charts-row">
+            <div class="comp-chart-box">
+              <div class="comp-chart-header">
+                <div class="comp-chart-title">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  <span>Convergencia Normalizada Comparativa (f_norm)</span>
+                </div>
+                <div class="comp-chart-desc">Generaciones 0 a 150 · Élite k = 2</div>
+              </div>
+              <div class="comp-chart-canvas-wrap">
+                <canvas id="comp-convergence-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="comp-chart-box">
+              <div class="comp-chart-header">
+                <div class="comp-chart-title">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                  <span>Evaluación Multicriterio de Desempeño</span>
+                </div>
+                <div class="comp-chart-desc">5 Dimensiones de Ingeniería</div>
+              </div>
+              <div class="comp-chart-canvas-wrap">
+                <canvas id="comp-radar-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Matriz de Ingeniería Comparativa Exhaustiva -->
+          <div class="comp-table-wrap">
+            <div style="margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 style="color: var(--text-bright); font-size: 1.05rem; font-weight: 700; margin: 0;">Matriz Comparativa de Ingeniería (8 Dimensiones)</h3>
+                <p style="color: var(--muted); font-size: 0.76rem; margin: 2px 0 0 0;">Análisis transversal de la arquitectura SGA sobre los tres casos de estudio del taller.</p>
+              </div>
+              <span class="badge badge-accent">Certificación Oficial Cátedra</span>
+            </div>
+
+            <table class="comp-matrix-table">
+              <thead>
+                <tr>
+                  <th style="width: 22%;">Dimensión de Análisis</th>
+                  <th style="width: 26%; color: #10B981;">Problema 1: VRP (Rutas)</th>
+                  <th style="width: 26%; color: #38BDF8;">Problema 2: PCB (Circuitos)</th>
+                  <th style="width: 26%; color: #F59E0B;">Problema 3: Markowitz (Cartera)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>1. Naturaleza del Espacio</strong></td>
+                  <td>Discreto / Combinatorio (15! permutaciones)</td>
+                  <td>Continuo 2D restringido (28 variables [Xi, Yi])</td>
+                  <td>Continuo convexo en simplex (10 ponderaciones wi)</td>
+                </tr>
+                <tr>
+                  <td><strong>2. Representación Genotípica</strong></td>
+                  <td>Claves Aleatorias continuas (Random Keys)</td>
+                  <td>Pares reales continuos [Xi, Yi] en mm</td>
+                  <td>Vector real continuo wi en [0.0, 0.40]</td>
+                </tr>
+                <tr>
+                  <td><strong>3. Decodificación Fenotípica</strong></td>
+                  <td>Ordenamiento argsort() y partición en 3 camiones</td>
+                  <td>Cálculo de centroides y polígonos sobre sustrato</td>
+                  <td>Normalización presupuestal y producto matricial</td>
+                </tr>
+                <tr>
+                  <td><strong>4. Criterio de Optimización</strong></td>
+                  <td>Minimizar distancia total euclídea (km)</td>
+                  <td>Minimizar 40% Wirelength + 10% Área sustrato</td>
+                  <td>Minimizar 50% Riesgo + 50% Desutilidad Retorno</td>
+                </tr>
+                <tr>
+                  <td><strong>5. Restricciones del Sistema</strong></td>
+                  <td>Capacidad 120 kg/camión y turno 480 min</td>
+                  <td>Aislamiento dieléctrico 2.0 mm y sustrato 100x80</td>
+                  <td>Presupuesto unitario sum(wi)=1 y tope máx 35%</td>
+                </tr>
+                <tr>
+                  <td><strong>6. Esquema de Penalización</strong></td>
+                  <td>Penalización cuadrática externa lambda*(viol)^2</td>
+                  <td>Penalización cuadrática por solapamiento (50%)</td>
+                  <td>Penalización cuadrática externa por desvío y tope</td>
+                </tr>
+                <tr>
+                  <td><strong>7. Factibilidad Plena (0 violaciones)</strong></td>
+                  <td><span class="badge badge-success">Gen 0 (Población Élite)</span></td>
+                  <td><span class="badge badge-success">Gen 40 (Erradicación solape)</span></td>
+                  <td><span class="badge badge-success">Gen 15 (Convergencia simplex)</span></td>
+                </tr>
+                <tr>
+                  <td><strong>8. Rendimiento y Eficiencia</strong></td>
+                  <td>Distancia: 429.8 km (Óptimo global)</td>
+                  <td>Trazas: 1080 mm · Área: 3168 mm² (-60.4%)</td>
+                  <td>Retorno: 14.78% · Volatilidad: 14.56% · SR: 0.7744</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
         </div>
       </section>
 
