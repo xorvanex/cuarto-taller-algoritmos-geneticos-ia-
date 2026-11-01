@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NexusOpt — Optimización Evolutiva e Inteligencia Artificial</title>
-  <meta name="description" content="NexusOpt: Plataforma de computación evolutiva y optimización heurística mediante Algoritmo Genético Simple (SGA) con manejo estricto de restricciones cuadráticas. Universidad de Cartagena." />
+  <title>Trabajo Académico IA — Algoritmos Genéticos</title>
+  <meta name="description" content="Plataforma de computación evolutiva y optimización heurística mediante Algoritmo Genético Simple (SGA) con manejo estricto de restricciones. Universidad de Cartagena." />
 
   <!-- ══ Google Fonts ══════════════════════════════════════ -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -81,17 +81,12 @@
 
     <!-- Meta & Academic attribution (Derecha) -->
     <div class="topbar-meta">
-      <div class="status-pill" id="status-pill" role="status" aria-live="polite">
-        <div class="status-dot ready" id="status-dot"></div>
-        <span id="status-label">Caso Base Certificado</span>
-      </div>
       <div class="topbar-academic-tag">
         <span class="academic-author">Dago David Palmera Navarro</span>
-        <span class="academic-sub">Semestre VII · IA</span>
       </div>
     </div>
   </header>
-
+   
   <!-- ════════════════════════════════════════════════════════
        MAIN LAYOUT
        ════════════════════════════════════════════════════════ -->
@@ -491,17 +486,6 @@
 
         </div>
 
-        <!-- Barra de progreso superior -->
-        <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-          <div class="progress-meta">
-            <span id="gen-counter-label" class="mono text-xs">Gen <span>150</span> / 150</span>
-            <span id="conv-badge" class="badge badge-success">● Certificado Python</span>
-          </div>
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" id="progress-fill" style="width: 100%;"></div>
-          </div>
-        </div>
-
         <!-- Split: Canvas + Convergencia -->
         <div class="viz-row">
 
@@ -570,12 +554,7 @@
                 Convergencia del SGA
               </div>
               <div class="panel-actions">
-                <span class="text-xs text-muted mono" style="padding:0 4px">Escala Logarítmica Natural</span>
-              
-                <button class="btn-chart-expand" data-expand-chart="vrp-convergence" title="Ampliar convergencia de VRP">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                  <span>Ampliar</span>
-                </button></div>
+                <span class="text-xs text-muted mono" style="padding:0 4px">Escala Logarítmica Natural</span></div>
             </div>
             <div class="panel-body" style="padding:12px 14px 8px">
               <canvas id="convergence-chart"></canvas>
@@ -842,12 +821,7 @@
                 Convergencia del SGA (PCB Layout)
               </div>
               <div class="panel-actions">
-                <span class="text-xs text-muted mono" style="padding:0 4px">Escala Logarítmica Natural</span>
-              
-                <button class="btn-chart-expand" data-expand-chart="pcb-convergence" title="Ampliar convergencia de PCB">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                  <span>Ampliar</span>
-                </button></div>
+                <span class="text-xs text-muted mono" style="padding:0 4px">Escala Logarítmica Natural</span></div>
             </div>
             <div class="panel-body" style="padding:12px 14px 8px">
               <canvas id="pcb-convergence-chart"></canvas>
@@ -1101,10 +1075,6 @@
               </div>
               <div class="panel-actions">
                 <span class="badge badge-accent">Espacio Riesgo vs. Retorno</span>
-                <button class="btn-chart-expand" data-expand-chart="mrk-frontier" title="Ampliar frontera eficiente">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                  <span>Ampliar</span>
-                </button>
               </div>
             </div>
             <div class="panel-body" style="padding:12px 14px 8px">
@@ -1129,10 +1099,6 @@
               </div>
               <div class="panel-actions">
                 <span class="badge badge-accent">Función de Pérdida Penalizada</span>
-                <button class="btn-chart-expand" data-expand-chart="mrk-convergence" title="Ampliar convergencia de Markowitz">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                  <span>Ampliar</span>
-                </button>
               </div>
             </div>
             <div class="panel-body" style="padding:12px 14px 8px">
@@ -1351,10 +1317,6 @@
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                   <span class="comp-chart-desc">Generaciones 0 a 150 · Élite k = 2</span>
-                  <button class="btn-chart-expand" data-expand-chart="comp-convergence" title="Ampliar comparativa global">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                    <span>Ampliar</span>
-                  </button>
                 </div>
               </div>
               <div class="comp-chart-canvas-wrap">
@@ -1475,36 +1437,5 @@
 <!-- Punto de Entrada Principal -->
 <script src="app.js"></script>
 
-  <!-- Modal de Expansión Avanzada de Gráficas y Análisis Detallado -->
-  <div id="chart-modal" class="chart-modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
-    <div class="chart-modal-card">
-      <div class="chart-modal-header">
-        <div class="chart-modal-title-group">
-          <span class="chart-modal-badge" id="chart-modal-badge">Gráfica Detallada</span>
-          <h3 class="chart-modal-title" id="chart-modal-title">Análisis Generacional de Convergencia</h3>
-        </div>
-        <div class="chart-modal-controls">
-          <button id="modal-btn-fullscreen" class="btn-modal-action" title="Pantalla completa" aria-label="Pantalla completa">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-            <span id="modal-fs-text">Maximizar</span>
-          </button>
-          <button id="modal-btn-export" class="btn-modal-action" title="Exportar como PNG" aria-label="Exportar gráfico">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>Exportar PNG</span>
-          </button>
-          <button id="modal-btn-close" class="btn-modal-action btn-modal-close" title="Cerrar modal" aria-label="Cerrar modal">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-      </div>
-      <div class="chart-modal-canvas-wrap">
-        <canvas id="modal-expanded-canvas"></canvas>
-      </div>
-      <div class="chart-modal-footer">
-        <div class="chart-modal-stats" id="chart-modal-stats"></div>
-        <div class="chart-modal-hint">Presione ESC o haga clic fuera para cerrar</div>
-      </div>
-    </div>
-  </div>
-</body>
+  </body>
 </html>
