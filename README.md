@@ -205,39 +205,122 @@ El pipeline exporta automáticamente visualizaciones vectoriales a $300\,\text{D
 
 ## 5. Problema 2: Diseño de Circuitos Electrónicos (PCB Layout)
 
-> **Estado del Módulo:** `[EN DESARROLLO / STAND-BY]`  
-> *Este módulo se encuentra formalmente planteado y estructurado, listo para su integración en la siguiente iteración.*
+### 5.1 Contexto y Definición del Problema
 
-### Planteamiento y Objetivos Técnicos
+El problema aborda la optimización espacial de componentes electrónicos y el ruteo de pistas de interconexión sobre una placa de circuito impreso (PCB) bidimensional con sustrato virgen de $100 \times 80\text{ mm}$ ($8000\text{ mm}^2$). La placa integra $14$ componentes microelectrónicos de diversas geometrías y naturalezas de montaje (SMD y Through-Hole), conectados mediante un conjunto de $22$ redes de señal (*nets*), con componentes críticos pre-anclados (MCU ARM, conector USB-C, regulador LDO y headers de expansión GPIO):
 
-El problema aborda la ubicación espacial óptima de $N$ componentes microelectrónicos (circuitos integrados, microcontroladores, capacitores, resistencias) sobre un sustrato de placa bidimensional de dimensiones confinadas:
+- **Componentes fijados (anclas tecnológicas):** Microcontrolador principal ARM Cortex (U1, $14 \times 14\text{ mm}$) en posición central, interfaz USB-C (J1) en el flanco periférico izquierdo y header GPIO (J2) en la bahía de conexión.
+- **Componentes móviles optimizados por SGA:** Cristales osciladores (Y1), memorias Flash (U3), capacitores de desacople cerámico (C1-C4) y resistores pull-up (R1-R3).
 
-- **Función Objetivo:** Minimizar la longitud total de las pistas de interconexión (*Wirelength Optimization* utilizando distancia Manhattan o Euclidian Splines) y minimizar el área del rectángulo envolvente (*Bounding Box*).
-- **Restricciones Físicas:**
-  - Garantizar distancias mínimas de aislamiento dieléctrico ($d_{ij} \ge d_{\min}$) para prevenir colisiones físicas y minimizar la interferencia electromagnética (*Electromagnetic Interference* - EMI y diafonía/crosstalk).
-  - Confinamiento estricto dentro de las fronteras de la placa ($0 \le x_i \le W$, $0 \le y_i \le H$).
-- **Estrategia Genética Prevista:** Codificación continua/entera de coordenadas espaciales $(x_i, y_i)$ y orientaciones angulares $(\theta_i \in \{0^\circ, 90^\circ, 180^\circ, 270^\circ\})$, evaluada mediante detección de colisiones por cajas envolventes (AABB) y penalización por solapamiento geométrico.
+### 5.2 Formulación Matemática y Función de Aptitud
+
+El espacio de búsqueda continuo $S \subset \mathbb{R}^{28}$ optimiza simultáneamente dos criterios de ingeniería contrapuestos: la longitud total de cableado (*Half-Perimeter Wirelength* - HPWL / Euclídea) y el área del rectángulo envolvente mínimo (*Bounding Box*), sujeto al cumplimiento estricto del aislamiento dieléctrico mínimo de $2.0\text{ mm}$ para mitigar diafonía (*crosstalk*) e interferencias electromagnéticas (EMI):
+
+$$\text{Minimizar } f(X) = \alpha \cdot \frac{\text{WL}(X)}{\text{WL}_{\text{worst}}} + \beta \cdot \frac{\text{Área}(X)}{\text{Área}_{\text{worst}}} + \lambda_c \sum_{i < j} \text{Colisión}(c_i, c_j)^2$$
+
+Donde:
+- $\alpha = 0.50$ (ponderación de longitud de trazas de cobre).
+- $\beta = 0.50$ (ponderación de compacidad del sustrato de fibra FR-4).
+- $\text{WL}_{\text{worst}} = 3850.0\text{ mm}$ y $\text{Área}_{\text{worst}} = 8000.0\text{ mm}^2$.
+- $\lambda_c = 100.0$ (coeficiente de penalización cuadrática por solapamiento o violación de aislamiento dieléctrico).
+
+### 5.3 Resultados Empíricos Certificados de Cátedra
+
+| Métrica de Ingeniería | Valor Inicial (Gen 0) | Valor Óptimo Certificado (Gen 150) | Mejora / Reducción |
+|:---|:---:|:---:|:---:|
+| **Fitness Ponderado ($f$)** | $1.31957$ | **$0.67591$** | **$-48.78\%$** |
+| **Longitud de Pistas (Wirelength)** | $2415.8\text{ mm}$ | **$1080.2\text{ mm}$** (Euclídea: $874.9\text{ mm}$) | **$-55.29\%$** |
+| **Área Envolvente del Sustrato** | $6400.0\text{ mm}^2$ | **$3167.7\text{ mm}^2$** ($69.7 \times 45.5\text{ mm}$) | **$-60.40\%$ (Ahorro)** |
+| **Colisiones Físicas** | $4$ colisiones activas | **$0$ colisiones** | **$100\%$ Factible** |
+| **Aislamiento Dieléctrico Mínimo** | $0.4\text{ mm}$ (violado) | **$2.0\text{ mm}$ (estrictamente satisfecho)** | Cumplimiento total |
+
+### 5.4 Evidencia Gráfica y Visualización
+
+<div align="center">
+  <img src="docs/img/figura3_pcb_layout.png" alt="Figura 3: Plano Tecnológico de Distribución Espacial y Ruteo de la Placa PCB" width="750">
+  <p><em>Figura 3. Plano tecnológico de empaquetamiento y ruteo de componentes sobre sustrato PCB de 100 x 80 mm.</em></p>
+</div>
+
+<div align="center">
+  <img src="docs/img/figura4_pcb_convergencia.png" alt="Figura 4: Curva de Convergencia del SGA para el Problema de PCB" width="750">
+  <p><em>Figura 4. Curva de convergencia generacional del algoritmo genético simple en escala logarítmica (Generaciones 0 a 150).</em></p>
+</div>
 
 ---
 
 ## 6. Problema 3: Optimización de Cartera de Inversiones (Markowitz)
 
-> **Estado del Módulo:** `[EN DESARROLLO / STAND-BY]`  
-> *Este módulo se encuentra formalmente planteado y estructurado, listo para su integración en la siguiente iteración.*
+### 6.1 Fundamento Teórico y Modelo Media-Varianza
 
-### Planteamiento y Fundamento Teórico
+El problema implementa el modelo clásico de selección de portafolios de **Harry Markowitz** (Premio Nobel de Economía, 1990), extendido mediante programación genética para explorar la **Frontera Eficiente** de Pareto sobre $10$ activos de renta variable y fija de alta liquidez global (AAPL, MSFT, GOOGL, AMZN, JNJ, JPM, XOM, TLT, GLD, VNQ):
 
-El problema implementa el modelo de selección de portafolio de media-varianza propuesto por **Harry Markowitz** (Premio Nobel de Economía), cuyo propósito es determinar la asignación óptima de capital entre un conjunto de activos financieros:
+- **Retorno Esperado de la Cartera:** $\mathbb{E}[R_p] = \sum_{i=1}^{M} w_i \mathbb{E}[R_i] = \vec{w}^T \vec{\mu}$
+- **Varianza y Riesgo del Portafolio:** $\sigma_p^2 = \sum_{i=1}^{M} \sum_{j=1}^{M} w_i w_j \sigma_{ij} = \vec{w}^T \Sigma \vec{w}$
+- **Ratio de Sharpe (Maximización con Tasa Libre de Riesgo $R_f = 3.50\%$):**
+  $$\text{SR}(\vec{w}) = \frac{\mathbb{E}[R_p] - R_f}{\sigma_p}$$
 
-- **Función Objetivo Multicriterio:** Maximizar el retorno esperado del portafolio $\mathbb{E}[R_p] = \vec{w}^T \vec{\mu}$ mientras se minimiza simultáneamente la volatilidad o varianza de la cartera $\sigma_p^2 = \vec{w}^T \Sigma \vec{w}$ (determinando la **Frontera Eficiente**).
-- **Restricciones del Portafolio:**
-  - Presupuesto total unitario: $\sum_{i=1}^{M} w_i = 1.0$.
-  - No negatividad (posiciones largas exclusivamente, sin ventas en corto): $w_i \ge 0, \; \forall i$.
-  - Límite máximo de concentración por activo individual ($w_i \le w_{\max}$) para garantizar diversificación del riesgo sistémico.
-- **Estrategia Genética Prevista:** Cromosoma continuo donde los genes representan pesos ponderados que se normalizan mediante la función Softmax o normalización de suma unitaria $\hat{w}_i = \frac{w_i}{\sum w_j}$, maximizando el Ratio de Sharpe.
+### 6.2 Función Objetivo y Operador de Normalización Estricta
+
+Para transformar el problema en minimización sobre el simplex unitario $\Delta^{M-1} = \{\vec{w} \in \mathbb{R}^{10} : \sum w_i = 1.0, w_i \ge 0\}$, se utiliza el inverso del Ratio de Sharpe junto con una barrera cuadrática que impone un límite estricto de concentración por activo ($w_i \le 35.0\%$):
+
+$$\text{Minimizar } f(\vec{w}) = \frac{1}{\text{SR}(\vec{w}) + 1.0} + \lambda_w \sum_{i=1}^{10} \max(0, w_i - 0.35)^2$$
+
+Las ponderaciones genotípicas se normalizan estrictamente en cada generación mediante normalización $L_1$:
+$$w_i = \frac{\tilde{w}_i}{\sum_{j=1}^{10} \tilde{w}_j} \implies \sum_{i=1}^{10} w_i = 100.00\%$$
+
+### 6.3 Resultados Empíricos Certificados de Cátedra
+
+| Métrica Financiera | Cartera Equitativa (Benchmark 1/N) | Portafolio Óptimo SGA (Gen 150) | Impacto / Eficiencia |
+|:---|:---:|:---:|:---:|
+| **Ratio de Sharpe (SR)** | $0.5821$ | **$0.7744$** | **$+33.04\%$ de rentabilidad/riesgo** |
+| **Retorno Esperado Anual ($\mathbb{E}[R_p]$)** | $11.45\%$ | **$14.78\%$** | **$+333\text{ bps}$ de rendimiento** |
+| **Volatilidad Anualizada ($\sigma_p$)** | $13.65\%$ | **$14.56\%$** | Riesgo controlado |
+| **Presupuesto Consolidado ($\sum w_i$)** | $100.00\%$ | **$100.00\%$** | Estrictamente unitario |
+| **Ponderación Máxima ($\max w_i$)** | $10.00\%$ | **$27.60\%$** (MSFT) $\le 35.0\%$ | **$100\%$ Factible** |
+| **Fitness Inverso Normalizado** | $0.63205$ | **$0.43348$** | Convergencia certificada |
+
+#### Estructura Patrimonial del Portafolio Óptimo (10 Activos)
+
+$$\begin{matrix}
+\textbf{Activo} & \textbf{Ticker} & \textbf{Sector} & \textbf{Ponderación } w_i \\
+\hline
+\text{Microsoft Corp.} & \text{MSFT} & \text{Tecnología} & 27.60\% \\
+\text{Apple Inc.} & \text{AAPL} & \text{Tecnología} & 27.40\% \\
+\text{Johnson \& Johnson} & \text{JNJ} & \text{Salud} & 11.40\% \\
+\text{JPMorgan Chase} & \text{JPM} & \text{Finanzas} & 10.10\% \\
+\text{Alphabet Inc.} & \text{GOOGL} & \text{Comunicaciones} & 8.90\% \\
+\text{Exxon Mobil} & \text{XOM} & \text{Energía} & 5.00\% \\
+\text{SPDR Gold Shares} & \text{GLD} & \text{Commodities} & 4.80\% \\
+\text{iShares 20+ Year Treasury} & \text{TLT} & \text{Renta Fija} & 2.30\% \\
+\text{Amazon.com Inc.} & \text{AMZN} & \text{Consumo} & 2.00\% \\
+\text{Vanguard Real Estate} & \text{VNQ} & \text{Inmobiliario} & 0.50\% \\
+\hline
+\textbf{Total Cartera} & & & \mathbf{100.00\%}
+\end{matrix}$$
+
+### 6.4 Evidencia Gráfica y Visualización de Cartera
+
+<div align="center">
+  <img src="docs/img/figura5_markowitz_arquitectura.png" alt="Figura 5: Arquitectura de Software Desacoplada del Módulo de Inversión Markowitz" width="750">
+  <p><em>Figura 5. Arquitectura de código desacoplada en cuatro capas para el problema 3 (Markowitz).</em></p>
+</div>
+
+<div align="center">
+  <img src="docs/img/figura6_markowitz_pesos_cartera.png" alt="Figura 6: Estructura Patrimonial de Pesos de Cartera Óptima" width="750">
+  <p><em>Figura 6. Asignación porcentual de capital por activo en el portafolio óptimo SGA con cota máxima del 35%.</em></p>
+</div>
+
+<div align="center">
+  <img src="docs/img/figura7_markowitz_convergencia.png" alt="Figura 7: Curva de Convergencia del SGA para la Cartera de Markowitz" width="750">
+  <p><em>Figura 7. Curva de convergencia del SGA en la minimización del inverso del Ratio de Sharpe (Generaciones 0 a 150).</em></p>
+</div>
+
+<div align="center">
+  <img src="docs/img/figura8_markowitz_frontera_eficiente.png" alt="Figura 8: Frontera Eficiente y Nube Monte Carlo" width="750">
+  <p><em>Figura 8. Frontera eficiente de Pareto, nube de 3,000 portafolios Monte Carlo y Capital Allocation Line (CAL).</em></p>
+</div>
 
 ---
-
 ## 7. Arquitectura de Software y Módulos de Código
 
 El código fuente del proyecto se estructura en cuatro módulos principales con responsabilidades de diseño bien delimitadas:
