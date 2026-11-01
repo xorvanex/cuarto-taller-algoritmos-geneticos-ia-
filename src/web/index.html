@@ -100,91 +100,7 @@
     <!-- ── Sidebar con Secciones Acordeón ──────────────────────── -->
     <aside class="sidebar" aria-label="Panel de configuración">
 
-      <!-- Acordeón 1: Modo de Simulación -->
-      <div class="sidebar-section">
-        <button class="sidebar-accordion-header" type="button" data-accordion="mode">
-          <span>Modo de Simulación</span>
-          <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="sidebar-accordion-content" id="acc-mode">
-          <div class="mode-toggle" role="group" aria-label="Modo">
-            <button class="mode-btn active" data-mode="catedra" title="Parámetros exactos del caso base del taller">
-              Cátedra
-            </button>
-            <button class="mode-btn" data-mode="libre" title="Modificar parámetros libremente">
-              Libre
-            </button>
-          </div>
-          <p class="text-xs text-muted" style="line-height:1.5; margin-top: 4px;">
-            <strong class="text-accent">Cátedra:</strong> parámetros oficiales certificados.<br>
-            <strong style="color:var(--primary)">Libre:</strong> desbloquea los sliders para experimentar.
-          </p>
-        </div>
-      </div>
-
-      <!-- Acordeón 2: Parámetros del SGA -->
-      <div class="sidebar-section">
-        <button class="sidebar-accordion-header" type="button" data-accordion="params">
-          <span>Parámetros SGA</span>
-          <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="sidebar-accordion-content" id="acc-params">
-          <!-- N -->
-          <div class="param-group">
-            <div class="param-label">
-              <span>Población (N)</span>
-              <span id="val-popsize">1000</span>
-            </div>
-            <input type="range" id="sl-popsize" class="param-slider" min="50" max="2000" step="50" value="1000" disabled />
-          </div>
-
-          <!-- Elitismo -->
-          <div class="param-group">
-            <div class="param-label">
-              <span>Elitismo (k)</span>
-              <span id="val-elitism">2</span>
-            </div>
-            <input type="range" id="sl-elitism" class="param-slider" min="0" max="10" step="1" value="2" disabled />
-          </div>
-
-          <!-- Pc -->
-          <div class="param-group">
-            <div class="param-label">
-              <span>Cruce SPX (P<sub>c</sub>)</span>
-              <span id="val-pc">90%</span>
-            </div>
-            <input type="range" id="sl-pc" class="param-slider" min="0" max="100" step="1" value="90" disabled />
-          </div>
-
-          <!-- Pm -->
-          <div class="param-group">
-            <div class="param-label">
-              <span>Mutación puntual (P<sub>m</sub>)</span>
-              <span id="val-pm">2.0%</span>
-            </div>
-            <input type="range" id="sl-pm" class="param-slider" min="0" max="20" step="0.5" value="2" disabled />
-          </div>
-
-          <!-- Max Gens -->
-          <div class="param-group">
-            <div class="param-label">
-              <span>Generaciones máx.</span>
-              <span id="val-maxgens">150</span>
-            </div>
-            <input type="range" id="sl-maxgens" class="param-slider" min="10" max="500" step="10" value="150" disabled />
-          </div>
-
-          <!-- Restaurar caso base -->
-          <button class="btn-restore" id="btn-restore-side" title="Volver a los parámetros exactos de cátedra">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
-            </svg>
-            Restaurar Caso Base
-          </button>
-        </div>
-      </div>
-
-      <!-- Acordeón 3: Control de Velocidad -->
+      <!-- Acordeón 1: Control de Velocidad -->
       <div class="sidebar-section">
         <button class="sidebar-accordion-header" type="button" data-accordion="speed">
           <span>Velocidad de Animación</span>
@@ -198,38 +114,35 @@
         </div>
       </div>
 
-      <!-- Acordeón 4: Caso Base & Cátedra -->
+      <!-- Acordeón 2: Caso Base & Cátedra -->
       <div class="sidebar-section">
         <button class="sidebar-accordion-header" type="button" data-accordion="base">
           <span>Caso Base & Cátedra</span>
           <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="sidebar-accordion-content" id="acc-base">
+          <!-- Parámetros SGA Cátedra Certificados -->
+          <div class="formula-card" style="margin-bottom: 4px; padding: 5px 8px; gap: 3px;">
+            <div class="formula-card-header">
+              <span>Parámetros SGA Cátedra</span>
+              <span class="formula-card-tag">Fijos</span>
+            </div>
+            <div class="info-grid">
+              <div class="info-chip"><div class="info-chip-label">Población (N)</div><div class="info-chip-value">1000</div></div>
+              <div class="info-chip"><div class="info-chip-label">Élite (k)</div><div class="info-chip-value">2</div></div>
+              <div class="info-chip"><div class="info-chip-label">Cruce SPX (Pc)</div><div class="info-chip-value">90%</div></div>
+              <div class="info-chip"><div class="info-chip-label">Mutación (Pm)</div><div class="info-chip-value">2.0%</div></div>
+              <div class="info-chip"><div class="info-chip-label">Generaciones</div><div class="info-chip-value">150</div></div>
+              <div class="info-chip"><div class="info-chip-label">Torneo (p)</div><div class="info-chip-value">2</div></div>
+            </div>
+          </div>
           <div class="info-grid">
-            <div class="info-chip">
-              <div class="info-chip-label">Clientes</div>
-              <div class="info-chip-value">15</div>
-            </div>
-            <div class="info-chip">
-              <div class="info-chip-label">Camiones</div>
-              <div class="info-chip-value">3</div>
-            </div>
-            <div class="info-chip">
-              <div class="info-chip-label">Capacidad</div>
-              <div class="info-chip-value">120 kg</div>
-            </div>
-            <div class="info-chip">
-              <div class="info-chip-label">Turno</div>
-              <div class="info-chip-value">480 min</div>
-            </div>
-            <div class="info-chip">
-              <div class="info-chip-label">D_ideal</div>
-              <div class="info-chip-value">235 km</div>
-            </div>
-            <div class="info-chip">
-              <div class="info-chip-label">D_worst</div>
-              <div class="info-chip-value">750 km</div>
-            </div>
+            <div class="info-chip"><div class="info-chip-label">Clientes</div><div class="info-chip-value">15</div></div>
+            <div class="info-chip"><div class="info-chip-label">Camiones</div><div class="info-chip-value">3</div></div>
+            <div class="info-chip"><div class="info-chip-label">Capacidad</div><div class="info-chip-value">120 kg</div></div>
+            <div class="info-chip"><div class="info-chip-label">Turno</div><div class="info-chip-value">480 min</div></div>
+            <div class="info-chip"><div class="info-chip-label">D_ideal</div><div class="info-chip-value">235 km</div></div>
+            <div class="info-chip"><div class="info-chip-label">D_worst</div><div class="info-chip-value">750 km</div></div>
           </div>
           <div class="formula-card">
             <div class="formula-card-header">
@@ -658,7 +571,11 @@
               </div>
               <div class="panel-actions">
                 <span class="text-xs text-muted mono" style="padding:0 4px">Escala Logarítmica Natural</span>
-              </div>
+              
+                <button class="btn-chart-expand" data-expand-chart="vrp-convergence" title="Ampliar convergencia de VRP">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  <span>Ampliar</span>
+                </button></div>
             </div>
             <div class="panel-body" style="padding:12px 14px 8px">
               <canvas id="convergence-chart"></canvas>
@@ -926,7 +843,11 @@
               </div>
               <div class="panel-actions">
                 <span class="text-xs text-muted mono" style="padding:0 4px">Escala Logarítmica Natural</span>
-              </div>
+              
+                <button class="btn-chart-expand" data-expand-chart="pcb-convergence" title="Ampliar convergencia de PCB">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  <span>Ampliar</span>
+                </button></div>
             </div>
             <div class="panel-body" style="padding:12px 14px 8px">
               <canvas id="pcb-convergence-chart"></canvas>

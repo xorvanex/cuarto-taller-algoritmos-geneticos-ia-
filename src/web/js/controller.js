@@ -55,8 +55,7 @@ class DashboardController {
 
     // Bindings de UI
     this._bindTabs();
-    this._bindModeToggle();
-    this._bindSliders();
+    this._bindSpeedSlider();
     this._bindControls();
     this._bindTimeline();
     this._bindAccordions();
@@ -298,46 +297,43 @@ class DashboardController {
         if (accBaseContent) {
           if (target === 'pcb') {
             accBaseContent.innerHTML = `
+              <!-- Parámetros SGA Cátedra Certificados -->
+              <div class="formula-card" style="margin-bottom: 4px; padding: 5px 8px; gap: 3px;">
+                <div class="formula-card-header">
+                  <span>Parámetros SGA Cátedra</span>
+                  <span class="formula-card-tag">Fijos</span>
+                </div>
+                <div class="info-grid">
+                  <div class="info-chip"><div class="info-chip-label">Población (N)</div><div class="info-chip-value">1000</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Élite (k)</div><div class="info-chip-value">2</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Cruce SPX (Pc)</div><div class="info-chip-value">90%</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Mutación (Pm)</div><div class="info-chip-value">2.0%</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Generaciones</div><div class="info-chip-value">150</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Torneo (p)</div><div class="info-chip-value">2</div></div>
+                </div>
+              </div>
               <div class="info-grid">
-                <div class="info-chip">
-                  <div class="info-chip-label">Componentes</div>
-                  <div class="info-chip-value">14</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Trazas (Nets)</div>
-                  <div class="info-chip-value">22</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Sustrato</div>
-                  <div class="info-chip-value">100x80 mm</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Aislamiento</div>
-                  <div class="info-chip-value">2.0 mm</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Área Final</div>
-                  <div class="info-chip-value">3168 mm²</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Wirelength</div>
-                  <div class="info-chip-value">1080 mm</div>
-                </div>
+                <div class="info-chip"><div class="info-chip-label">Componentes</div><div class="info-chip-value">14</div></div>
+                <div class="info-chip"><div class="info-chip-label">Trazas (Nets)</div><div class="info-chip-value">22</div></div>
+                <div class="info-chip"><div class="info-chip-label">Sustrato</div><div class="info-chip-value">100x80 mm</div></div>
+                <div class="info-chip"><div class="info-chip-label">Aislamiento</div><div class="info-chip-value">2.0 mm</div></div>
+                <div class="info-chip"><div class="info-chip-label">Área Final</div><div class="info-chip-value">3168 mm²</div></div>
+                <div class="info-chip"><div class="info-chip-label">Wirelength</div><div class="info-chip-value">1080 mm</div></div>
               </div>
               <div class="formula-card">
                 <div class="formula-card-header">
                   <span>Criterio Multicriterio</span>
                   <span class="formula-card-tag">Cátedra P2</span>
                 </div>
-                <div class="formula-card-eq" style="font-size: 0.90rem; line-height: 1.5; color: var(--text-bright);">
+                <div class="formula-card-eq">
                   <i>f</i><sub>norm</sub> = <span style="color:#38BDF8">0.40·<i>WL</i></span> + <span style="color:#10B981">0.10·<i>Área</i></span> + <span style="color:#EF4444">0.50·<i>Colisión</i></span>
                 </div>
-                <div class="formula-card-legend" style="display:flex; flex-direction:column; gap:4px; margin-top:8px;">
+                <div class="formula-card-legend">
                   <span><b style="color:#38BDF8">WL:</b> Longitud Trazas Nets (40%)</span>
                   <span><b style="color:#10B981">Área:</b> Sustrato Bounding Box (10%)</span>
                   <span><b style="color:#EF4444">Colisión:</b> Penalización Dieléctrica (50%)</span>
                 </div>
-                <div class="formula-card-footer" style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">
+                <div class="formula-card-footer">
                   <span>Tutoría Oficial</span>
                   <span>Prof. Ing. M. A. Ospina</span>
                 </div>
@@ -358,46 +354,43 @@ class DashboardController {
             }, 60);
                     } else if (target === 'markowitz') {
             accBaseContent.innerHTML = `
+              <!-- Parámetros SGA Cátedra Certificados -->
+              <div class="formula-card" style="margin-bottom: 4px; padding: 5px 8px; gap: 3px;">
+                <div class="formula-card-header">
+                  <span>Parámetros SGA Cátedra</span>
+                  <span class="formula-card-tag">Fijos</span>
+                </div>
+                <div class="info-grid">
+                  <div class="info-chip"><div class="info-chip-label">Población (N)</div><div class="info-chip-value">1000</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Élite (k)</div><div class="info-chip-value">2</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Cruce SPX (Pc)</div><div class="info-chip-value">90%</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Mutación (Pm)</div><div class="info-chip-value">2.0%</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Generaciones</div><div class="info-chip-value">150</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Torneo (p)</div><div class="info-chip-value">2</div></div>
+                </div>
+              </div>
               <div class="info-grid">
-                <div class="info-chip">
-                  <div class="info-chip-label">Activos</div>
-                  <div class="info-chip-value">10</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Tasa Rf</div>
-                  <div class="info-chip-value">3.50%</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Tope Activo</div>
-                  <div class="info-chip-value">35.0%</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Retorno E[R]</div>
-                  <div class="info-chip-value">14.78%</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Volatilidad</div>
-                  <div class="info-chip-value">14.56%</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Sharpe SR</div>
-                  <div class="info-chip-value">0.7744</div>
-                </div>
+                <div class="info-chip"><div class="info-chip-label">Activos</div><div class="info-chip-value">10</div></div>
+                <div class="info-chip"><div class="info-chip-label">Tasa Rf</div><div class="info-chip-value">3.50%</div></div>
+                <div class="info-chip"><div class="info-chip-label">Tope Activo</div><div class="info-chip-value">35.0%</div></div>
+                <div class="info-chip"><div class="info-chip-label">Retorno E[R]</div><div class="info-chip-value">14.78%</div></div>
+                <div class="info-chip"><div class="info-chip-label">Volatilidad</div><div class="info-chip-value">14.56%</div></div>
+                <div class="info-chip"><div class="info-chip-label">Sharpe SR</div><div class="info-chip-value">0.7744</div></div>
               </div>
               <div class="formula-card">
                 <div class="formula-card-header">
                   <span>Criterio Multicriterio</span>
                   <span class="formula-card-tag">Cátedra P3</span>
                 </div>
-                <div class="formula-card-eq" style="font-size: 0.90rem; line-height: 1.5; color: var(--text-bright);">
+                <div class="formula-card-eq">
                   <i>f</i><sub>norm</sub> = <span style="color:#EF4444">0.50·<i>Riesgo</i></span> + <span style="color:#10B981">0.50·(1 - <i>Retorno</i>)</span> + <span style="color:#38BDF8">Penalización</span>
                 </div>
-                <div class="formula-card-legend" style="display:flex; flex-direction:column; gap:4px; margin-top:8px;">
+                <div class="formula-card-legend">
                   <span><b style="color:#EF4444">Riesgo:</b> Volatilidad sigma_p / sigma_max (50%)</span>
                   <span><b style="color:#10B981">Retorno:</b> Desutilidad de retorno medio (50%)</span>
                   <span><b style="color:#38BDF8">Penalización:</b> Presupuesto unitario y cota 35%</span>
                 </div>
-                <div class="formula-card-footer" style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.06); padding-top:6px;">
+                <div class="formula-card-footer">
                   <span>Tutoría Oficial</span>
                   <span>Prof. Ing. M. A. Ospina</span>
                 </div>
@@ -421,31 +414,28 @@ class DashboardController {
             }, 60);
 } else if (target === 'vrp') {
             accBaseContent.innerHTML = `
+              <!-- Parámetros SGA Cátedra Certificados -->
+              <div class="formula-card" style="margin-bottom: 4px; padding: 5px 8px; gap: 3px;">
+                <div class="formula-card-header">
+                  <span>Parámetros SGA Cátedra</span>
+                  <span class="formula-card-tag">Fijos</span>
+                </div>
+                <div class="info-grid">
+                  <div class="info-chip"><div class="info-chip-label">Población (N)</div><div class="info-chip-value">1000</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Élite (k)</div><div class="info-chip-value">2</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Cruce SPX (Pc)</div><div class="info-chip-value">90%</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Mutación (Pm)</div><div class="info-chip-value">2.0%</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Generaciones</div><div class="info-chip-value">150</div></div>
+                  <div class="info-chip"><div class="info-chip-label">Torneo (p)</div><div class="info-chip-value">2</div></div>
+                </div>
+              </div>
               <div class="info-grid">
-                <div class="info-chip">
-                  <div class="info-chip-label">Clientes</div>
-                  <div class="info-chip-value">15</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Camiones</div>
-                  <div class="info-chip-value">3</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Capacidad</div>
-                  <div class="info-chip-value">120 kg</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">Turno</div>
-                  <div class="info-chip-value">480 min</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">D_ideal</div>
-                  <div class="info-chip-value">235 km</div>
-                </div>
-                <div class="info-chip">
-                  <div class="info-chip-label">D_worst</div>
-                  <div class="info-chip-value">750 km</div>
-                </div>
+                <div class="info-chip"><div class="info-chip-label">Clientes</div><div class="info-chip-value">15</div></div>
+                <div class="info-chip"><div class="info-chip-label">Camiones</div><div class="info-chip-value">3</div></div>
+                <div class="info-chip"><div class="info-chip-label">Capacidad</div><div class="info-chip-value">120 kg</div></div>
+                <div class="info-chip"><div class="info-chip-label">Turno</div><div class="info-chip-value">480 min</div></div>
+                <div class="info-chip"><div class="info-chip-label">D_ideal</div><div class="info-chip-value">235 km</div></div>
+                <div class="info-chip"><div class="info-chip-label">D_worst</div><div class="info-chip-value">750 km</div></div>
               </div>
               <div class="formula-card">
                 <div class="formula-card-header">
@@ -479,67 +469,8 @@ class DashboardController {
     });
   }
 
-  /* ── Modo Cátedra / Libre ────────────────────────────────── */
-  _bindModeToggle() {
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const newMode = btn.dataset.mode;
-        if (newMode === this.mode) return;
-        this.mode = newMode;
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === this.mode));
-        this._syncSliderLock();
-        this._pause();
-        if (this.mode === 'catedra') {
-          this._restoreCatedra();
-        } else {
-          this._setMaxGenerations(this.params.maxGens);
-          this._resetGA();
-          this.chart.clear();
-          this.chart.setMaxGens(this.params.maxGens);
-          this._redrawCanvas();
-          this._updateUI();
-        }
-      });
-    });
-  }
-
-  _syncSliderLock() {
-    const isLocked = this.mode === 'catedra';
-    ['sl-popsize', 'sl-elitism', 'sl-pc', 'sl-pm', 'sl-maxgens'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.disabled = isLocked;
-    });
-  }
-
-  /* ── Sliders de configuración ────────────────────────────── */
-  _bindSliders() {
-    const sliders = [
-      { id: 'sl-popsize', key: 'popSize', valId: 'val-popsize', fn: v => v },
-      { id: 'sl-elitism', key: 'elitism', valId: 'val-elitism', fn: v => v },
-      { id: 'sl-pc',      key: 'pc',      valId: 'val-pc',      fn: v => v + '%' },
-      { id: 'sl-pm',      key: 'pm',      valId: 'val-pm',      fn: v => parseFloat(v).toFixed(1) + '%' },
-      { id: 'sl-maxgens', key: 'maxGens', valId: 'val-maxgens', fn: v => v },
-    ];
-
-    sliders.forEach(({ id, key, valId, fn }) => {
-      const sl  = document.getElementById(id);
-      const val = document.getElementById(valId);
-      if (!sl || !val) return;
-      sl.addEventListener('input', () => {
-        val.textContent = fn(sl.value);
-        if (key === 'pc') {
-          this.params.pc = parseFloat(sl.value) / 100;
-        } else if (key === 'pm') {
-          this.params.pm = parseFloat(sl.value) / 100;
-        } else if (key === 'maxGens') {
-          this._setMaxGenerations(parseInt(sl.value, 10));
-        } else {
-          this.params[key] = parseInt(sl.value, 10);
-        }
-      });
-    });
-
-    // Speed slider calibrado
+  /* ── Control de Velocidad ─────────────────────────────────── */
+  _bindSpeedSlider() {
     const slSpeed  = document.getElementById('sl-speed');
     const valSpeed = document.getElementById('val-speed');
     if (slSpeed) {
