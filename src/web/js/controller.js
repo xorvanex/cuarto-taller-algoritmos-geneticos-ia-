@@ -276,9 +276,10 @@ class DashboardController {
         // Control dinámico de la barra lateral (oculta en Landing, visible en los problemas)
         const layout = document.querySelector('.main-layout');
         if (layout) {
+          layout.classList.remove('on-comparador');
           if (target === 'landing') {
             layout.classList.add('on-landing');
-            this._setStatus('ready', 'NexusOpt · Plataforma de Simulación');
+            this._setStatus('ready', 'Presentación académica');
             return;
           } else {
             layout.classList.remove('on-landing');
@@ -286,6 +287,7 @@ class DashboardController {
         }
 
         if (target === 'comparador') {
+          if (layout) layout.classList.add('on-comparador');
           this._setStatus('ready', 'Comparador Multi-Problema');
           setTimeout(() => this._initComparadorCharts(), 60);
           return;
@@ -583,8 +585,6 @@ class DashboardController {
 
         // Actualizar KPIs para esa generación
         this._setText('kpi-fitness',  stat.best.toFixed(5));
-        const estDist = gen === maxG ? 429.8 : (429.8 + (stat.best - 0.37825) * 450);
-        this._setText('kpi-dist',     estDist.toFixed(1) + ' km');
         this._setText('kpi-aptitud',  ((1.0 - Math.min(stat.best, 1.0)) * 100).toFixed(2) + '%');
 
         // Detección dinámica y reactiva de factibilidad de rutas para la generación actual
@@ -601,6 +601,7 @@ class DashboardController {
           let maxTime = 0;
           let totalOverload = 0;
           let totalOvertime = 0;
+          let totalDistance = 0;
 
           for (const r of curRoutes) {
             let rDist = 0;
@@ -621,6 +622,7 @@ class DashboardController {
             }
             rDist += Math.hypot(depot.x - currX, depot.y - currY);
             const rTime = (rDist / speed) * 60.0 + rServ;
+            totalDistance += rDist;
 
             if (rLoad > maxLoad) maxLoad = rLoad;
             if (rTime > maxTime) maxTime = rTime;
@@ -632,6 +634,7 @@ class DashboardController {
           const feasEl = document.getElementById('kpi-feasible');
           const feasSubEl = document.getElementById('kpi-feasible-sub');
           const isFeas = (totalOverload === 0 && totalOvertime === 0);
+          this._setText('kpi-dist', `${totalDistance.toFixed(1)} km`);
 
           if (feasEl) {
             if (isFeas) {
@@ -645,7 +648,7 @@ class DashboardController {
 
           if (feasSubEl) {
             if (isFeas) {
-              feasSubEl.textContent = `Carga: ${maxLoad.toFixed(1)}/120 kg · Turno: ${maxTime.toFixed(0)}/480 min`;
+              feasSubEl.textContent = `Carga: ${maxLoad.toFixed(1)}/${capLimit.toFixed(0)} kg · Turno: ${maxTime.toFixed(0)}/${timeLimit.toFixed(0)} min`;
             } else {
               feasSubEl.textContent = `${totalOverload.toFixed(1)} kg sobrecarga · ${totalOvertime.toFixed(0)} min exceso`;
             }
@@ -657,6 +660,9 @@ class DashboardController {
         // Si es la última generación, mostrar el top 8 original de Python
         if (gen === maxG && this.pyData.top_individuals) {
           this._renderTop8Table(this.pyData.top_individuals);
+        } else {
+          const tbody = document.getElementById('pop-tbody');
+          if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--muted)">La exportación certificada no incluye el Top 8 de la generación ${targetGen}.</td></tr>`;
         }
 
         this._setStatus('ready', `Inspección: Gen ${gen} / ${maxG}`);
