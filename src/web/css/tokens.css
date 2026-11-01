@@ -1,0 +1,80 @@
+/* =============================================================
+   Interfaz académica — Algoritmos Genéticos
+   Sistema visual oscuro para análisis de datos
+   Palette: bg=#090D16  surface=#111827  surface-alt=#162032
+            accent=#10B981  primary=#38BDF8  warning=#F59E0B
+            border=rgba(255,255,255,0.08)
+   Typography: Inter (UI) + JetBrains Mono / Fira Code (Data & Metrics)
+   Author: Dago David Palmera Navarro — Universidad de Cartagena, Semestre VII
+   ============================================================= */
+
+/* ── Tokens (CSS Custom Properties) ─────────────────────── */
+:root {
+  /* Colors */
+  --bg:           #090D16;
+  --bg-deep:      #05080F;
+  --surface:      #111827;
+  --surface-alt:  #162032;
+  --surface-high: #1E293B;
+  --surface-hover:#24324A;
+  --accent:       #10B981;
+  --accent-glow:  rgba(16, 185, 129, 0.14);
+  --accent-dim:   rgba(16, 185, 129, 0.08);
+  --primary:      #38BDF8;
+  --primary-glow: rgba(56, 189, 248, 0.14);
+  --primary-dim:  rgba(56, 189, 248, 0.08);
+  --primary-cobalt:#3B82F6;
+  --warning:      #F59E0B;
+  --warning-dim:  rgba(245, 158, 11, 0.08);
+  --danger:       #EF4444;
+  --danger-dim:   rgba(239, 68, 68, 0.08);
+  --muted:        #94A3B8;
+  --muted-dim:    #64748B;
+  --text:         #E2E8F0;
+  --text-bright:  #F8FAFC;
+  --border:       rgba(255, 255, 255, 0.08);
+  --border-subtle:rgba(255, 255, 255, 0.04);
+  --border-accent:rgba(16, 185, 129, 0.28);
+  --border-primary:rgba(56, 189, 248, 0.28);
+
+  /* Glass & Elevations */
+  --glass-bg:     rgba(17, 24, 39, 0.85);
+  --glass-blur:   blur(12px);
+  --glass-border: 1px solid var(--border);
+
+  /* Typography */
+  --font-mono:    'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+  --font-ui:      'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Layout */
+  --sidebar-w:    300px;
+  --topbar-h:     58px;
+
+  /* Spacing */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* Border radius */
+  --r-xs: 3px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:     0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md:     0 4px 6px -1px rgba(0,0,0,0.5);
+  --shadow-lg:     0 10px 15px -3px rgba(0,0,0,0.6);
+  --shadow-accent: 0 0 16px rgba(16, 185, 129, 0.2);
+
+  /* Transitions */
+  --t-fast:   120ms ease;
+  --t-normal: 180ms ease;
+  --t-slow:   280ms ease;
+}

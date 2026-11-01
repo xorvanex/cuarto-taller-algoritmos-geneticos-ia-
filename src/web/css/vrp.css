@@ -1,0 +1,42 @@
+/* ── Canvas de Rutas Centrado ── */
+.map-panel-card .panel-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 11, 18, 0.7);
+  min-height: 0;
+}
+
+#vrp-canvas,
+#pcb-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#vrp-canvas { cursor: crosshair; }
+#pcb-canvas { cursor: default; }
+
+/* ── Centrado de Tabla Top 8 ── */
+.pop-table-wrap table th,
+.pop-table-wrap table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.pop-table-wrap table td:nth-child(2) {
+  font-family: var(--font-mono);
+}
+
+.fitness-bar-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+

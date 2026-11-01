@@ -1,0 +1,42 @@
+/* ── Markowitz Tab Styles & Defensive Constraints ─────────── */
+.mrk-allocation-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+}
+
+@media (max-width: 900px) {
+  .mrk-allocation-split {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.theory-callout {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: var(--r-md);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.theory-callout-icon,
+.theory-callout-icon svg,
+.theory-callout svg {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+

@@ -1,0 +1,209 @@
+/* ── Comparador tab ──────────────────────────────────────── */
+.comparador-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-4);
+}
+
+.prob-summary-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.prob-summary-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prob-summary-icon.vrp { background: rgba(16,185,129,0.15); }
+.prob-summary-icon.pcb { background: rgba(59,130,246,0.15); }
+.prob-summary-icon.mrk { background: rgba(245,158,11,0.15); }
+.prob-summary-icon svg { width: 22px; height: 22px; }
+.prob-summary-icon.vrp svg { color: var(--accent); }
+.prob-summary-icon.pcb svg { color: var(--primary); }
+.prob-summary-icon.mrk svg { color: var(--warning); }
+
+.prob-summary-name {
+  font-weight: 700;
+  color: var(--text-bright);
+  font-size: 0.875rem;
+}
+
+.prob-summary-status { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+.prob-stat-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.prob-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.prob-stat-row span:last-child {
+  font-family: var(--font-mono);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   ESTILOS MEJORADOS PARA TAB COMPARADOR
+   ========================================================================== */
+.comp-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.comp-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .comp-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comp-kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.comp-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comp-kpi-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.comp-kpi-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.comp-kpi-main-val {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #F8FAFC;
+  line-height: 1.2;
+}
+
+.comp-kpi-subtext {
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.comp-charts-row {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .comp-charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comp-chart-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 380px;
+}
+
+.comp-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comp-chart-title {
+  font-size: 0.90rem;
+  font-weight: 700;
+  color: #F8FAFC;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comp-chart-desc {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.comp-chart-canvas-wrap {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 300px;
+}
+
+.comp-table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.comp-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.80rem;
+}
+
+.comp-matrix-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.comp-matrix-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.comp-matrix-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+

@@ -1,0 +1,14 @@
+/* ══════════════════════════════════════════════════════════════════
+   VISTA: PROBLEMA 2 — PCB LAYOUT & MICROELECTRÓNICA
+   ══════════════════════════════════════════════════════════════════ */
+#tab-pcb .canvas-legend {
+  margin-top: 8px;
+}
+
+#tab-pcb .kpi-card {
+  transition: transform var(--t-fast), border-color var(--t-fast);
+}
+
+#tab-pcb .kpi-card:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+}
