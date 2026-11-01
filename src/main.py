@@ -34,6 +34,7 @@ for p in (PROJECT_ROOT, SRC_DIR):
         sys.path.insert(0, p)
 
 from src.core.ga_engine import SimpleGeneticAlgorithm, GAParams, GenerationStats, GAResult
+from src.core.exporter import export_dataset
 from src.problems.pcb import (
     PCBModel,
     PCBInstance,
@@ -164,32 +165,7 @@ def export_vrp_results(
         ],
     }
 
-    # 1. Guardar en data/vrp_results.json
-    global_dir = os.path.join(PROJECT_ROOT, "data")
-    os.makedirs(global_dir, exist_ok=True)
-    global_json = os.path.join(global_dir, "vrp_results.json")
-    with open(global_json, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-    # 2. Guardar en src/web/data/vrp_results.json
-    web_dir = os.path.join(SRC_DIR, "web", "data")
-    os.makedirs(web_dir, exist_ok=True)
-    web_json = os.path.join(web_dir, "vrp_results.json")
-    with open(web_json, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-    # 3. Guardar en src/web/data/vrp_results.js (garantiza ejecución autónoma con doble clic)
-    web_js = os.path.join(web_dir, "vrp_results.js")
-    with open(web_js, "w", encoding="utf-8") as f:
-        f.write("/** Datos de simulación generados automáticamente por Python (src/main.py) */\n")
-        f.write("window.VRP_SIMULATION_DATA = ")
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write(";\n")
-
-    print(f"\n[EXPORTACIÓN MODULAR DE DATOS A LA WEB]")
-    print(f"  [OK] Dataset global:               {global_json}")
-    print(f"  [OK] Dataset web JSON:             {web_json}")
-    print(f"  [OK] Dataset web JS (autónomo):    {web_js}")
+    export_dataset(data, "VRP_SIMULATION_DATA", "vrp_results", PROJECT_ROOT)
 
 
 def run_problem_1_vrp(custom_params: bool = False) -> None:
@@ -472,32 +448,7 @@ def export_pcb_results(
         "generation_layouts": generation_layouts,
     }
 
-    # 1. Guardar en data/pcb_results.json
-    global_dir = os.path.join(PROJECT_ROOT, "data")
-    os.makedirs(global_dir, exist_ok=True)
-    global_json = os.path.join(global_dir, "pcb_results.json")
-    with open(global_json, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-    # 2. Guardar en src/web/data/pcb_results.json
-    web_dir = os.path.join(SRC_DIR, "web", "data")
-    os.makedirs(web_dir, exist_ok=True)
-    web_json = os.path.join(web_dir, "pcb_results.json")
-    with open(web_json, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-    # 3. Guardar en src/web/data/pcb_results.js (garantiza ejecución autónoma)
-    web_js = os.path.join(web_dir, "pcb_results.js")
-    with open(web_js, "w", encoding="utf-8") as f:
-        f.write("/** Datos certificados de simulación PCB generados por Python (src/main.py) */\n")
-        f.write("window.PCB_SIMULATION_DATA = ")
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write(";\n")
-
-    print(f"\n[EXPORTACIÓN MODULAR DE DATOS PCB A LA WEB]")
-    print(f"  [OK] Dataset global:               {global_json}")
-    print(f"  [OK] Dataset web JSON:             {web_json}")
-    print(f"  [OK] Dataset web JS (autónomo):    {web_js}")
+    export_dataset(data, "PCB_SIMULATION_DATA", "pcb_results", PROJECT_ROOT)
 
 
 def run_problem_2_pcb(custom_params: bool = False) -> None:
@@ -745,32 +696,7 @@ def export_markowitz_results(
         "monte_carlo_cloud": monte_carlo_cloud,
     }
 
-    # 1. Guardar en data/markowitz_results.json
-    global_dir = os.path.join(PROJECT_ROOT, "data")
-    os.makedirs(global_dir, exist_ok=True)
-    global_json = os.path.join(global_dir, "markowitz_results.json")
-    with open(global_json, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-    # 2. Guardar en src/web/data/markowitz_results.json
-    web_dir = os.path.join(SRC_DIR, "web", "data")
-    os.makedirs(web_dir, exist_ok=True)
-    web_json = os.path.join(web_dir, "markowitz_results.json")
-    with open(web_json, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-    # 3. Guardar en src/web/data/markowitz_results.js (garantiza ejecución autónoma)
-    web_js = os.path.join(web_dir, "markowitz_results.js")
-    with open(web_js, "w", encoding="utf-8") as f:
-        f.write("/** Datos certificados de simulación Markowitz generados por Python (src/main.py) */\n")
-        f.write("window.MARKOWITZ_SIMULATION_DATA = ")
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write(";\n")
-
-    print(f"\n[EXPORTACIÓN MODULAR DE DATOS MARKOWITZ A LA WEB]")
-    print(f"  [OK] Dataset global:               {global_json}")
-    print(f"  [OK] Dataset web JSON:             {web_json}")
-    print(f"  [OK] Dataset web JS (autónomo):    {web_js}")
+    export_dataset(data, "MARKOWITZ_SIMULATION_DATA", "markowitz_results", PROJECT_ROOT)
 
 
 def run_problem_3_markowitz(custom_params: bool = False) -> None:
